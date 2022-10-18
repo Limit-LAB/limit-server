@@ -1,0 +1,48 @@
+[package]
+name = "limon-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+utoipa-swagger-ui = { version = "2", features = ["axum"] }
+hyper = "*"
+serde = "*"
+serde_json = "*"
+tokio = { version = "1.21.2", features = ["full"] }
+tokio-util = "*"
+chrono = { version = "0.4", features = ["serde"] }
+rsa = { version = "*", features = ["serde"] }
+jsonwebtoken = "8.1"
+anyhow = "*"
+once_cell = "*"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+async-trait = "*"
+http-body = "0.4.5"
+toml = "*"
+
+[dependencies.axum]
+version = "0.5"
+features = ["http2", "ws", "headers"]
+
+[dependencies.tower]
+version = "0.4"
+features = ["limit", "timeout", "util"]
+
+[dependencies.utoipa]
+version = "2"
+features = ["axum_extras", "chrono", "decimal", "uuid"]
+
+[dependencies.uuid]
+version = "1.2.1"
+features = [
+    "v4",
+    # "v7",
+    "fast-rng",
+    "macro-diagnostics",
+    "serde",
+]
+
+[dev-dependencies]
+reqwest = "*"
+lazy_static = "*"

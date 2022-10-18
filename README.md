@@ -1,0 +1,1 @@
+![[JWT](http://jwt.io/)](http://jwt.io/img/badge-compatible.svg)
