@@ -8,6 +8,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    USER_LOGIN_PASSCODE (ID) {
+        ID -> Text,
+        PASSCODE -> Text,
+    }
+}
+
+diesel::table! {
     USER_PRIVACY_SETTINGS (ID) {
         ID -> Text,
         AVATAR -> Text,
@@ -30,7 +37,13 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(USER_LOGIN_PASSCODE -> USER (ID));
 diesel::joinable!(USER_PRIVACY_SETTINGS -> USER (ID));
 diesel::joinable!(USER_PROFILE -> USER (ID));
 
-diesel::allow_tables_to_appear_in_same_query!(USER, USER_PRIVACY_SETTINGS, USER_PROFILE,);
+diesel::allow_tables_to_appear_in_same_query!(
+    USER,
+    USER_LOGIN_PASSCODE,
+    USER_PRIVACY_SETTINGS,
+    USER_PROFILE,
+);

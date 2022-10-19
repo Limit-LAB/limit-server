@@ -1,5 +1,7 @@
 use once_cell::sync::OnceCell;
+
 use serde::{Deserialize, Serialize};
+
 pub static GLOBAL_CONFIG: OnceCell<Config> = OnceCell::new();
 
 pub mod mock {
@@ -14,6 +16,7 @@ pub mod mock {
                 path: "mock.db".to_string(),
             },
             jwt_secret: "mock".to_string(),
+            database_pool_thread_count: 3,
             admin_jwt: jsonwebtoken::encode(
                 &jsonwebtoken::Header::default(),
                 &JWTClaim::new(Uuid::new_v4(), chrono::Duration::days(1)),
@@ -32,6 +35,17 @@ pub enum Database {
     Mysql { url: String },
 }
 
+/// Deploy mode of the server
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DeployMode {
+    /// standalone mode
+    StandAlone { ip: String },
+    /// master node of cluster, the url of slave nodes
+    Master { ip: String, slaves_ip: Vec<String> },
+    /// the url of the master
+    Slave { master_ip: String },
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Metrics {
     /// prometheus metrics
@@ -46,6 +60,9 @@ pub enum Metrics {
 pub struct Config {
     /// Database config
     pub database: Database,
+    /// Database connection pool thread count
+    /// default is 3
+    pub database_pool_thread_count: usize,
     /// metrics config
     pub metrics: Metrics,
     /// remember to set this to a random string

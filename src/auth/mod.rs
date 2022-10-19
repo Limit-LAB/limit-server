@@ -47,3 +47,13 @@ pub fn mock_token(expire: chrono::Duration) -> String {
     )
     .unwrap()
 }
+
+pub fn generate_random_passcode() -> String {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let mut passcode = String::new();
+    for _ in 0..6 {
+        passcode.push_str(&rng.gen_range(0..=9).to_string());
+    }
+    passcode
+}

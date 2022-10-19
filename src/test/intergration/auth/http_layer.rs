@@ -14,9 +14,9 @@ pub async fn test_auth_http_service() {
             (mock_token(chrono::Duration::days(-10)), StatusCode::UNAUTHORIZED),
         ];
     }
-    tracing::info!("💪 test auth http service started");
+    tracing::info!("💪 test {} started", module_path!());
     crate::test::intergration::do_with_port(|p| async move {
-        tracing::info!("🚀 test auth http service on port {}", p);
+        tracing::info!("🚀 test {} on port {}", module_path!(), p);
         let app = Router::new().route(
             "/",
             get_service(AuthHttpLayer.layer(AuthLayer.layer(DummyAuthService))),
@@ -74,6 +74,7 @@ pub async fn test_auth_http_service() {
             println!("{:?}", res.text().await);
         }
         server.abort();
+        tracing::info!("🎉test {} finished🎉", module_path!());
     })
     .await
     .await;

@@ -1,8 +1,40 @@
 pub mod auth;
+pub mod user;
 
 use crossbeam_channel::{Receiver, Sender};
+use diesel::{r2d2::ConnectionManager, SqliteConnection};
 use lazy_static::lazy_static;
+use r2d2::Pool;
 use std::io::Read;
+macro_rules! tokio_run {
+    ($e:expr) => {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on($e)
+    };
+}
+
+#[test]
+fn intergration_tests() {
+    tracing_subscriber::fmt::init();
+    tracing::info!("⚠intergration tests started⚠");
+    let manager = ConnectionManager::<SqliteConnection>::new("test.sqlite");
+    let pool = Pool::builder()
+        .test_on_check_out(true)
+        .build(manager)
+        .expect("Could not build connection pool");
+    tokio_run!(async move {
+        let tasks = vec![
+            tokio::spawn(auth::http_layer::test_auth_http_service()),
+            tokio::spawn(user::services::test_verify_and_auth_user(pool.clone())),
+        ];
+        futures::future::join_all(tasks).await;
+    });
+    tracing::info!("🎉intergration tests finished🎉");
+}
+
 lazy_static! {
     pub static ref AVAILABLE_PORTS_CHANNEL: (Sender<u16>, Receiver<u16>) = {
         let mut conf_file = std::fs::File::open("intergration_test_conf.toml").unwrap();
@@ -40,25 +72,4 @@ where
     let res = f(port);
     AVAILABLE_PORTS_CHANNEL.0.clone().send(port).unwrap();
     res
-}
-
-macro_rules! tokio_run {
-    ($e:expr) => {
-        tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap()
-            .block_on($e)
-    };
-}
-
-#[test]
-fn intergration_tests() {
-    tracing_subscriber::fmt::init();
-    tracing::info!("⚠intergration tests started⚠");
-    tokio_run!(async move {
-        let tasks = vec![tokio::spawn(auth::http_layer::test_auth_http_service())];
-        futures::future::join_all(tasks).await;
-    });
-    tracing::info!("🎉intergration tests finished🎉");
 }

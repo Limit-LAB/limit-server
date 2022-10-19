@@ -1,7 +1,7 @@
 use crate::schema::*;
 
 use diesel::prelude::*;
-use std::{str::FromStr, time::Duration};
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -9,68 +9,94 @@ use utoipa::ToSchema;
 /// A user
 #[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
 #[diesel(table_name = USER)]
-struct User {
+pub struct User {
     /// should be unique
     #[diesel(column_name = "ID")]
     #[diesel(serialize_as = crate::orm::Uuid)]
-    id: String,
+    pub id: String,
     // TODO: web3 approach
     /// the RSA public key of the user
     #[diesel(column_name = "PUBKEY")]
-    pubkey: String,
+    pub pubkey: String,
 }
 
 /// A user's profile
 #[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
 #[diesel(table_name = USER_PROFILE)]
-struct Profile {
+pub struct Profile {
     /// forgien key to [`User`]
     #[diesel(column_name = "ID")]
     #[diesel(serialize_as = crate::orm::Uuid)]
-    id: String,
+    pub id: String,
     /// the user's name
     #[diesel(column_name = "NAME")]
-    name: String,
+    pub name: String,
     /// the user name on the server for @ and login
     #[diesel(column_name = "USER_NAME")]
-    username: String,
+    pub username: String,
     /// the user's bio
     #[diesel(column_name = "BIO")]
-    bio: Option<String>,
+    pub bio: Option<String>,
     // TODO: url or base64?
     /// the user's avatar
     /// if the avatar is not set, the client will use the None
     /// when query without permission, the client will return the None
     #[diesel(column_name = "AVATAR")]
-    avatar: Option<String>,
+    pub avatar: Option<String>,
     /// last login time
     /// if the user never login, the server will return the register time
     /// when query without permission, the server will return the None
     #[diesel(column_name = "LAST_SEEN")]
     #[diesel(serialize_as = crate::orm::Duration)]
-    last_seen: Option<String>,
+    pub last_seen: Option<String>,
     /// the last time the user update the profile
     /// client should use this to check whether the profile is updated
     #[diesel(column_name = "LAST_MODIFIED")]
     #[diesel(serialize_as = crate::orm::DateTime)]
-    last_modified: Option<String>,
+    pub last_modified: Option<String>,
+}
+
+/// user login passcode
+#[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
+#[diesel(table_name = USER_LOGIN_PASSCODE)]
+pub struct UserLoginPasscode {
+    /// forgien key to [`User`]
+    #[diesel(column_name = "ID")]
+    #[diesel(serialize_as = crate::orm::Uuid)]
+    pub id: String,
+    /// the user's random passcode
+    #[diesel(column_name = "PASSCODE")]
+    pub passcode: String,
 }
 
 /// A user's private settings
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
-struct PrivacySettings {
+#[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
+#[diesel(table_name = USER_PRIVACY_SETTINGS)]
+pub struct PrivacySettings {
     /// forgien key to [`User`]
-    id: uuid::Uuid,
+    #[diesel(column_name = "ID")]
+    #[diesel(serialize_as = crate::orm::Uuid)]
+    pub id: String,
     /// check profile
-    avatar: Visibility,
+    #[diesel(column_name = "AVATAR")]
+    #[diesel(serialize_as = crate::orm::Visibility)]
+    pub avatar: String,
     /// last time online
-    last_seen: Visibility,
+    #[diesel(column_name = "LAST_SEEN")]
+    #[diesel(serialize_as = crate::orm::Visibility)]
+    pub last_seen: String,
     /// group invites
-    groups: Visibility,
+    #[diesel(column_name = "JOINED_GROUPS")]
+    #[diesel(serialize_as = crate::orm::Visibility)]
+    pub groups: String,
     /// could foward messages to other users
-    forwards: Visibility,
+    #[diesel(column_name = "FORWARDS")]
+    #[diesel(serialize_as = crate::orm::Visibility)]
+    pub forwards: String,
     /// minimum 24 hours, maximum 1 week
-    jwt_expiration: Duration,
+    #[diesel(column_name = "JWT_EXPIRATION")]
+    #[diesel(serialize_as = crate::orm::Duration)]
+    pub jwt_expiration: String,
 }
 
 /// The visibility of a field
@@ -119,7 +145,7 @@ fn test_user_model() {
         username: "xdddd".to_string(),
         bio: Some("xdddd".to_string()),
         avatar: Some("xdddd".to_string()),
-        last_seen: Some(crate::orm::Duration::from(Duration::from_secs(100)).0),
+        last_seen: Some(crate::orm::Duration::from(std::time::Duration::from_secs(100)).0),
         last_modified: Some(crate::orm::DateTime::from(Utc::now()).0),
     };
 
