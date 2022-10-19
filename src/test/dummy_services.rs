@@ -44,17 +44,13 @@ impl Service<(JWTClaim, Request<Body>)> for DummyAuthService {
         Ok(()).into()
     }
 
-    fn call(&mut self, req: (JWTClaim, Request<Body>)) -> Self::Future {
+    fn call(&mut self, _: (JWTClaim, Request<Body>)) -> Self::Future {
         ReusableBoxFuture::new(async {
-            tower::service_fn(|_: Request<Body>| async {
-                Ok::<_, Infallible>(
-                    Response::builder()
-                        .body(Body::from("Hello authed user!"))
-                        .unwrap(),
-                )
-            })
-            .call(req.1)
-            .await
+            Ok::<_, Infallible>(
+                Response::builder()
+                    .body(Body::from("Hello authed user!"))
+                    .unwrap(),
+            )
         })
     }
 }

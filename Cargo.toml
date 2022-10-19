@@ -43,6 +43,10 @@ features = [
     "serde",
 ]
 
+[dependencies.diesel]
+version = "2.0.0"
+features = ["sqlite", "uuid", "chrono"]
+
 [dev-dependencies]
 reqwest = "*"
 lazy_static = "*"
