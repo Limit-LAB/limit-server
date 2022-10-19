@@ -1,0 +1,1 @@
+drop table USER_LOGIN_PASSCODE;
