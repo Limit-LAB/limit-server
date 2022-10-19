@@ -20,6 +20,8 @@ tracing-subscriber = "0.3"
 async-trait = "*"
 http-body = "0.4.5"
 toml = "*"
+crossbeam-channel = "*"
+futures = "*"
 
 [dependencies.axum]
 version = "0.5"

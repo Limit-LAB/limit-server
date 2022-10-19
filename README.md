@@ -1,6 +1,8 @@
 # LIMITS
 > Lemon's IM does not have ITS LIMITS
 
+[![Rust](https://github.com/LemonHX/limit/actions/workflows/rust.yml/badge.svg)](https://github.com/LemonHX/limit/actions/workflows/rust.yml)
+
 ![[JWT](http://jwt.io/)](http://jwt.io/img/badge-compatible.svg)
 
 [`中文版在这里啦~~`](README.zh-cn.md)

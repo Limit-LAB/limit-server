@@ -1,8 +1,6 @@
 use crate::schema::*;
 
-use diesel::{
-    prelude::*,
-};
+use diesel::prelude::*;
 use std::{str::FromStr, time::Duration};
 
 use serde::{Deserialize, Serialize};
@@ -139,7 +137,7 @@ fn test_user_model() {
     assert_eq!(rows_inserted, 1);
 
     let users = USER::table.load::<User>(&mut con).unwrap();
-    assert!(users.len() > 1);
+    assert!(users.len() >= 1);
     let profile_of_username = USER_PROFILE::table
         .inner_join(USER::table)
         .filter(USER::PUBKEY.eq("xdddd"))

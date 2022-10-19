@@ -1,0 +1,34 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: nightly
+          override: true
+          components: rustfmt, clippy
+    - name: diesel_cli
+      run: cargo install diesel_cli --no-default-features --features sqlite
+    - name: run diesel migration
+      run: diesel migration run
+    # - name: check fmt
+    #   run: cargo fmt --check
+    - name: Build
+      run: cargo build
+    - name: Run tests
+      run: cargo test -- --test-threads=1
