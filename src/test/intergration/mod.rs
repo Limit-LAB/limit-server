@@ -20,6 +20,7 @@ macro_rules! tokio_run {
 fn intergration_tests() {
     tracing_subscriber::fmt::init();
     tracing::info!("⚠intergration tests started⚠");
+    crate::config::mock::mock();
     let manager = ConnectionManager::<SqliteConnection>::new("test.sqlite");
     let pool = Pool::builder()
         .test_on_check_out(true)
@@ -27,10 +28,17 @@ fn intergration_tests() {
         .expect("Could not build connection pool");
     tokio_run!(async move {
         let tasks = vec![
-            tokio::spawn(auth::http_layer::test_auth_http_service()),
+            // tokio::spawn(auth::http_layer::test_auth_http_service()),
             tokio::spawn(user::services::test_verify_and_auth_user(pool.clone())),
         ];
-        futures::future::join_all(tasks).await;
+        futures::future::join_all(tasks).await
+    })
+    .into_iter()
+    .for_each(|r| {
+        if let Err(e) = r {
+            tracing::error!("💥intergration test failed💥: {}", e);
+            panic!("💥intergration test failed💥: {}", e);
+        }
     });
     tracing::info!("🎉intergration tests finished🎉");
 }

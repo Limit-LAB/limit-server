@@ -54,17 +54,27 @@ pub async fn verify_and_auth_user(
                         .filter(USER::ID.eq(&id))
                         .select((
                             USER::ID,
+                            USER::SHAREDKEY,
                             USER_LOGIN_PASSCODE::PASSCODE,
                             USER_PRIVACY_SETTINGS::JWT_EXPIRATION,
                         ))
-                        .first::<(String, String, String)>(&mut con)
-                        .map(|(id, expected_passcode, duration)| {
+                        .first::<(String, String, String, String)>(&mut con)
+                        .map(|(id, sharedkey, expected_passcode, duration)| {
                             let uuid = uuid::Uuid::parse_str(&id).unwrap();
                             let expire = chrono::Duration::from_std(Duration::from_secs(
                                 duration.parse().unwrap(),
                             ))
                             .unwrap();
-                            if passcode == expected_passcode {
+                            let decrypted =
+                                limit_am::aes256_decrypt_string(&sharedkey, passcode.as_str());
+                            if let Err(err) = decrypted {
+                                tracing::error!("decrypt error: {}", err);
+                                return Response::builder()
+                                    .status(StatusCode::UNAUTHORIZED)
+                                    .body(Body::empty())
+                                    .unwrap();
+                            }
+                            if decrypted.unwrap() == expected_passcode {
                                 tracing::info!("user login success: id: {}", id);
                                 let jwt = jsonwebtoken::encode(
                                     &jsonwebtoken::Header::default(),

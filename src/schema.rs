@@ -4,6 +4,7 @@ diesel::table! {
     USER (ID) {
         ID -> Text,
         PUBKEY -> Text,
+        SHAREDKEY -> Text,
     }
 }
 

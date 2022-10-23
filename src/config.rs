@@ -11,19 +11,24 @@ pub mod mock {
 
     use super::*;
     pub fn mock() {
-        GLOBAL_CONFIG.get_or_init(|| Config {
-            database: Database::Sqlite {
-                path: "mock.db".to_string(),
-            },
-            jwt_secret: "mock".to_string(),
-            database_pool_thread_count: 3,
-            admin_jwt: jsonwebtoken::encode(
-                &jsonwebtoken::Header::default(),
-                &JWTClaim::new(Uuid::new_v4(), chrono::Duration::days(1)),
-                &jsonwebtoken::EncodingKey::from_secret("mock_admin".as_bytes()),
-            )
-            .unwrap(),
-            metrics: Metrics::Terminal,
+        GLOBAL_CONFIG.get_or_init(|| {
+            let (server_secret_key, server_public_key) = limit_am::create_random_secret().unwrap();
+            Config {
+                database: Database::Sqlite {
+                    path: "mock.db".to_string(),
+                },
+                jwt_secret: "mock".to_string(),
+                database_pool_thread_count: 3,
+                admin_jwt: jsonwebtoken::encode(
+                    &jsonwebtoken::Header::default(),
+                    &JWTClaim::new(Uuid::new_v4(), chrono::Duration::days(1)),
+                    &jsonwebtoken::EncodingKey::from_secret("mock_admin".as_bytes()),
+                )
+                .unwrap(),
+                metrics: Metrics::Terminal,
+                server_secret_key,
+                server_public_key,
+            }
         });
     }
 }
@@ -70,4 +75,8 @@ pub struct Config {
     pub jwt_secret: String,
     /// generated when you first run the server
     pub admin_jwt: String,
+    /// server secret key
+    pub server_secret_key: String,
+    /// server public key
+    pub server_public_key: String,
 }

@@ -18,6 +18,9 @@ pub struct User {
     /// the RSA public key of the user
     #[diesel(column_name = "PUBKEY")]
     pub pubkey: String,
+    /// the shared key of the user
+    #[diesel(column_name = "SHAREDKEY")]
+    pub sharedkey: String,
 }
 
 /// A user's profile
@@ -137,6 +140,7 @@ fn test_user_model() {
     let dummy_user = User {
         id: id.clone(),
         pubkey: "xdddd".to_string(),
+        sharedkey: "xdddd".to_string(),
     };
 
     let dummy_user_profile = Profile {

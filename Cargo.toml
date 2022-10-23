@@ -11,7 +11,7 @@ serde_json = "*"
 tokio = { version = "1.21.2", features = ["full"] }
 tokio-util = "*"
 chrono = { version = "0.4", features = ["serde"] }
-rsa = { version = "*", features = ["serde"] }
+limit-am = { git = "https://github.com/Limit-IM/limit-am",rev = "00af23e46b8fd4a277fefffa733cf172db33db6f"}
 jsonwebtoken = "8.1"
 anyhow = "*"
 once_cell = "*"
@@ -54,7 +54,7 @@ version = "2.0.0"
 features = ["sqlite", "uuid", "chrono", "r2d2"]
 
 [dev-dependencies]
-reqwest = {version = "*", features = ["json"]}
+reqwest = { version = "*", features = ["json"] }
 lazy_static = "*"
 
 [features]
