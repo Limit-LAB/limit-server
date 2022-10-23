@@ -17,9 +17,9 @@ macro_rules! tokio_run {
 }
 
 #[test]
-fn intergration_tests() {
+fn integration_tests() {
     tracing_subscriber::fmt::init();
-    tracing::info!("⚠intergration tests started⚠");
+    tracing::info!("⚠integration tests started⚠");
     crate::config::mock::mock();
     let manager = ConnectionManager::<SqliteConnection>::new("test.sqlite");
     let pool = Pool::builder()
@@ -36,16 +36,16 @@ fn intergration_tests() {
     .into_iter()
     .for_each(|r| {
         if let Err(e) = r {
-            tracing::error!("💥intergration test failed💥: {}", e);
-            panic!("💥intergration test failed💥: {}", e);
+            tracing::error!("💥integration test failed💥: {}", e);
+            panic!("💥integration test failed💥: {}", e);
         }
     });
-    tracing::info!("🎉intergration tests finished🎉");
+    tracing::info!("🎉integration tests finished🎉");
 }
 
 lazy_static! {
     pub static ref AVAILABLE_PORTS_CHANNEL: (Sender<u16>, Receiver<u16>) = {
-        let mut conf_file = std::fs::File::open("intergration_test_conf.toml").unwrap();
+        let mut conf_file = std::fs::File::open("integration_test_conf.toml").unwrap();
         let mut conf_str = String::new();
         conf_file.read_to_string(&mut conf_str).unwrap();
         let conf: toml::Value = toml::from_str(&conf_str).unwrap();

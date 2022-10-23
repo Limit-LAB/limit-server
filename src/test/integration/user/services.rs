@@ -12,7 +12,7 @@ use crate::{user::services::verify_and_auth_user, ServerState};
 
 pub async fn test_verify_and_auth_user(pool: Pool<ConnectionManager<SqliteConnection>>) {
     tracing::info!("💪 test {} started", module_path!());
-    crate::test::intergration::do_with_port(|p| async move {
+    crate::test::integration::do_with_port(|p| async move {
         tracing::info!("🚀 test {} on port {}", module_path!(), p);
         let id = uuid::Uuid::new_v4().to_string();
         let (user_sec_key, user_pubkey) = limit_am::create_random_secret().unwrap();

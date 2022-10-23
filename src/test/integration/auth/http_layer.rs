@@ -15,7 +15,7 @@ pub async fn test_auth_http_service() {
         ];
     }
     tracing::info!("💪 test {} started", module_path!());
-    crate::test::intergration::do_with_port(|p| async move {
+    crate::test::integration::do_with_port(|p| async move {
         tracing::info!("🚀 test {} on port {}", module_path!(), p);
         let app = Router::new().route(
             "/",
