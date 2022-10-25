@@ -28,8 +28,9 @@ fn integration_tests() {
         .expect("Could not build connection pool");
     tokio_run!(async move {
         let tasks = vec![
-            // tokio::spawn(auth::http_layer::test_auth_http_service()),
+            tokio::spawn(auth::http_layer::test_auth_http_service()),
             tokio::spawn(user::services::test_verify_and_auth_user(pool.clone())),
+            tokio::spawn(user::services::test_integrate_auth_user(pool.clone())),
         ];
         futures::future::join_all(tasks).await
     })

@@ -15,13 +15,52 @@ use crate::{
 /// although i am not expecting get user by its id
 pub fn get_user_by_id() {}
 
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
+pub struct UserRequestLoginRequest {
+    pub id: String,
+}
+
 /// update user's random passcode in db
 /// send user random passcode encrypted with user's pubkey
-pub fn user_login_request() {
-    // let pubkey = RsaPublicKey::from_public_key_der(&pubkey.as_bytes()).unwrap();
-    // let padding = rsa::PaddingScheme::new_pkcs1v15_encrypt();
-    // let decoded = pubkey.decrypt(&encrypted_passcode.as_bytes(), padding).unwrap();
-    // let decrypted_passcode = todo!();
+pub async fn user_login_request(
+    Extension(state): Extension<ServerState>,
+    Json(UserRequestLoginRequest { id }): Json<UserRequestLoginRequest>,
+) -> Response<Body> {
+    use diesel::ExpressionMethods;
+    uuid::Uuid::parse_str(&id)
+        .map(|_| {
+            state
+                .sqlite_pool
+                .get()
+                .map(|mut con| {
+                    let passcode = generate_random_passcode();
+                    // update random passcode for user
+                    diesel::update(USER_LOGIN_PASSCODE::table)
+                        .filter(USER_LOGIN_PASSCODE::ID.eq(&id))
+                        .set(USER_LOGIN_PASSCODE::PASSCODE.eq(&passcode))
+                        .execute(&mut con)
+                        .unwrap();
+                    Response::builder()
+                        .status(StatusCode::OK)
+                        .body(Body::from(passcode))
+                        .unwrap()
+                })
+                // no db connection
+                .unwrap_or_else(|_| {
+                    tracing::error!("database went down!");
+                    Response::builder()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(Body::empty())
+                        .unwrap()
+                })
+        })
+        .unwrap_or_else(|_| {
+            tracing::warn!("invalid user id: {}", id);
+            Response::builder()
+                .status(StatusCode::BAD_REQUEST)
+                .body(Body::empty())
+                .unwrap()
+        })
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -30,6 +69,21 @@ pub struct UserLoginRequest {
     pub passcode: String,
 }
 
+fn generate_random_passcode() -> String {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let mut passcode = String::new();
+    let pool = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B',
+        'C', 'D', 'E', 'F', '!', '@', '#', '$', '%', '^', '&', '*', '_', '=', '+',
+    ];
+    for _ in 0..6 {
+        passcode.push(pool[rng.gen_range(0..33)]);
+    }
+    passcode
+}
+
+/// per ip could only request 5 times in 5 minutes
 /// get user's pubkey
 /// first try validate id
 /// decrypt user's random passcode
@@ -93,7 +147,7 @@ pub async fn verify_and_auth_user(
                                     .filter(USER_LOGIN_PASSCODE::ID.eq(id))
                                     .set(
                                         USER_LOGIN_PASSCODE::PASSCODE
-                                            .eq(crate::auth::generate_random_passcode()),
+                                            .eq(generate_random_passcode()),
                                     )
                                     .execute(&mut con)
                                     .unwrap();

@@ -48,7 +48,7 @@ pub async fn test_auth_http_service() {
             StatusCode::UNAUTHORIZED
         );
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
-        println!("{:?}", res.text().await);
+        tracing::info!("{:?}", res.text().await);
 
         // with header
         for (token, result_code) in TOKENS_RESULT_CODE_TABLE.iter() {
@@ -71,7 +71,7 @@ pub async fn test_auth_http_service() {
                 result_code
             );
             assert_eq!(res.status(), result_code.clone());
-            println!("{:?}", res.text().await);
+            tracing::info!("{:?}", res.text().await);
         }
         server.abort();
         tracing::info!("🎉test {} finished🎉", module_path!());
