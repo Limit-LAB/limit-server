@@ -1,0 +1,36 @@
+[package]
+name = "limit-test-utils"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lazy_static = "*"
+crossbeam-channel = "*"
+toml = "*"
+volo = "*"
+volo-grpc = "*"
+futures = "*"
+jsonwebtoken = "8.1"
+serde = { version = "1.0", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"] }
+once_cell = "*"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+tokio = "1"
+
+limit-am = { git = "https://github.com/Limit-IM/limit-am",rev = "00af23e46b8fd4a277fefffa733cf172db33db6f"}
+limit-server-auth = { path = "../limit-server-auth" }
+limit-db = {path = "../limit-db"}
+limit-config = {path = "../limit-config"}
+
+[dependencies.uuid]
+version = "1.2.1"
+features = [
+    "v4",
+    # "v7",
+    "fast-rng",
+    "macro-diagnostics",
+    "serde",
+]

@@ -1,0 +1,42 @@
+[package]
+name = "limit-server-auth"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+tokio = { version = "1", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+jsonwebtoken = "8.1"
+serde = { version = "1.0", features = ["derive"] }
+
+pilota = "*"      # we recommend to use the latest framework version for new features and bug fixes
+volo = "*"        # we recommend to use the latest framework version for new features and bug fixes
+volo-grpc = "*"   # we recommend to use the latest framework version for new features and bug fixes
+volo-gen = { path = "./volo-gen" }
+rand = "*"
+tracing = "0.1"
+
+limit-db = { path = "../limit-db" }
+limit-am = { git = "https://github.com/Limit-IM/limit-am",rev = "00af23e46b8fd4a277fefffa733cf172db33db6f"}
+limit-config = {path = "../limit-config"}
+
+[dependencies.diesel]
+version = "2.0.0"
+features = ["sqlite", "uuid", "chrono", "r2d2"]
+
+[dependencies.uuid]
+version = "1.2.1"
+features = [
+    "v4",
+    # "v7",
+    "fast-rng",
+    "macro-diagnostics",
+    "serde",
+]
+
+[dev-dependencies]
+limit-test-utils = {path = "../limit-test-utils"}
+crossbeam-channel = "*"
+futures = "*"

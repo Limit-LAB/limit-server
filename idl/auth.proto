@@ -1,0 +1,24 @@
+syntax = "proto3";
+package limit.auth;
+
+message Auth {
+  string jwt = 1;
+}
+
+message RequestAuthRequest {
+  string id = 1;
+}
+
+message RequestAuthResponse {
+  string rand_text = 1;
+}
+
+message DoAuthRequest {
+  string id = 1;
+  string validated = 2;
+}
+
+service AuthService {
+  rpc RequestAuth(RequestAuthRequest) returns (RequestAuthResponse);
+  rpc DoAuth(DoAuthRequest) returns (Auth);
+}

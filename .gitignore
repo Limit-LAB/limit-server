@@ -1,2 +1,7 @@
-/target
+target/
 doc/
+.DS_Store
+.idea/
+.vscode/
+
+*.code-workspace

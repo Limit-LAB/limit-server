@@ -1,0 +1,34 @@
+[package]
+name = "limit-db"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+r2d2 = "*"
+r2d2_sqlite = "*"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "*"
+anyhow = "*"
+chrono = { version = "0.4", features = ["serde"] }
+lazy_static = "1.4.0"
+limit-config = { path = "../limit-config" }
+
+motore = "*"
+volo = "*"        # we recommend to use the latest framework version for new features and bug fixes
+volo-grpc = "*"   # we recommend to use the latest framework version for new features and bug fixes
+
+[dependencies.uuid]
+version = "1.2.1"
+features = [
+    "v4",
+    # "v7",
+    "fast-rng",
+    "macro-diagnostics",
+    "serde",
+]
+
+[dependencies.diesel]
+version = "2.0.0"
+features = ["sqlite", "uuid", "chrono", "r2d2"]
+
+

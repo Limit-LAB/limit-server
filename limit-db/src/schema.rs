@@ -1,4 +1,5 @@
 // @generated automatically by Diesel CLI.
+#![allow(non_snake_case)]
 
 diesel::table! {
     USER (ID) {

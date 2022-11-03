@@ -4,10 +4,9 @@ use diesel::prelude::*;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 
 /// A user
-#[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
+#[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
 #[diesel(table_name = USER)]
 pub struct User {
     /// should be unique
@@ -24,10 +23,10 @@ pub struct User {
 }
 
 /// A user's profile
-#[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
+#[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
 #[diesel(table_name = USER_PROFILE)]
 pub struct Profile {
-    /// forgien key to [`User`]
+    /// foreign key to [`User`]
     #[diesel(column_name = "ID")]
     #[diesel(serialize_as = crate::orm::Uuid)]
     pub id: String,
@@ -60,10 +59,10 @@ pub struct Profile {
 }
 
 /// user login passcode
-#[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
+#[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
 #[diesel(table_name = USER_LOGIN_PASSCODE)]
 pub struct UserLoginPasscode {
-    /// forgien key to [`User`]
+    /// foreign key to [`User`]
     #[diesel(column_name = "ID")]
     #[diesel(serialize_as = crate::orm::Uuid)]
     pub id: String,
@@ -73,10 +72,10 @@ pub struct UserLoginPasscode {
 }
 
 /// A user's private settings
-#[derive(Serialize, Deserialize, ToSchema, Clone, Queryable, Insertable, Selectable)]
+#[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
 #[diesel(table_name = USER_PRIVACY_SETTINGS)]
 pub struct PrivacySettings {
-    /// forgien key to [`User`]
+    /// foreign key to [`User`]
     #[diesel(column_name = "ID")]
     #[diesel(serialize_as = crate::orm::Uuid)]
     pub id: String,
@@ -103,10 +102,10 @@ pub struct PrivacySettings {
 }
 
 /// The visibility of a field
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum Visibility {
     Public,
-    FrendsOnly,
+    FriendsOnly,
     Private,
 }
 
@@ -115,7 +114,7 @@ impl FromStr for Visibility {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "public" => Ok(Self::Public),
-            "friends_only" => Ok(Self::FrendsOnly),
+            "friends_only" => Ok(Self::FriendsOnly),
             "private" => Ok(Self::Private),
             _ => Err(()),
         }
@@ -126,7 +125,7 @@ impl ToString for Visibility {
     fn to_string(&self) -> String {
         match self {
             Self::Public => "public".to_string(),
-            Self::FrendsOnly => "friends_only".to_string(),
+            Self::FriendsOnly => "friends_only".to_string(),
             Self::Private => "private".to_string(),
         }
     }
@@ -153,7 +152,7 @@ fn test_user_model() {
         last_modified: Some(crate::orm::DateTime::from(Utc::now()).0),
     };
 
-    let mut con = diesel::sqlite::SqliteConnection::establish("test.sqlite").unwrap();
+    let mut con = diesel::sqlite::SqliteConnection::establish("../test.sqlite").unwrap();
     let rows_inserted = diesel::insert_into(USER::table)
         .values(dummy_user)
         .execute(&mut con)

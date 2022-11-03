@@ -1,37 +1,6 @@
 use once_cell::sync::OnceCell;
-
 use serde::{Deserialize, Serialize};
-
 pub static GLOBAL_CONFIG: OnceCell<Config> = OnceCell::new();
-
-pub mod mock {
-    use uuid::Uuid;
-
-    use crate::auth::JWTClaim;
-
-    use super::*;
-    pub fn mock() {
-        GLOBAL_CONFIG.get_or_init(|| {
-            let (server_secret_key, server_public_key) = limit_am::create_random_secret().unwrap();
-            Config {
-                database: Database::Sqlite {
-                    path: "mock.db".to_string(),
-                },
-                jwt_secret: "mock".to_string(),
-                database_pool_thread_count: 3,
-                admin_jwt: jsonwebtoken::encode(
-                    &jsonwebtoken::Header::default(),
-                    &JWTClaim::new(Uuid::new_v4(), chrono::Duration::days(1)),
-                    &jsonwebtoken::EncodingKey::from_secret("mock_admin".as_bytes()),
-                )
-                .unwrap(),
-                metrics: Metrics::Terminal,
-                server_secret_key,
-                server_public_key,
-            }
-        });
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Database {

@@ -128,8 +128,8 @@ where
 #[diesel(sql_type = sql_types::Text)]
 pub struct Visibility(pub String);
 
-impl From<crate::user::model::Visibility> for Visibility {
-    fn from(visibility: crate::user::model::Visibility) -> Self {
+impl From<crate::user::Visibility> for Visibility {
+    fn from(visibility: crate::user::Visibility) -> Self {
         Self(visibility.to_string())
     }
 }
@@ -137,7 +137,7 @@ impl From<crate::user::model::Visibility> for Visibility {
 impl Into<Visibility> for String {
     fn into(self) -> Visibility {
         Visibility(
-            crate::user::model::Visibility::from_str(self.as_str())
+            crate::user::Visibility::from_str(self.as_str())
                 .unwrap()
                 .to_string(),
         )
