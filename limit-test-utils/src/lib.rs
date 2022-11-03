@@ -92,7 +92,15 @@ macro_rules! test_service {
             let server = $server.run(addr).await.unwrap();
         });
         tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
-        futures::future::join_all($tasks).await;
+        futures::future::join_all($tasks)
+            .await
+            .into_iter()
+            .for_each(|r| {
+                if let Err(e) = r {
+                    tracing::error!("💥integration test failed💥: {}", e);
+                    panic!("💥integration test failed💥: {}", e);
+                }
+            });
         server.abort();
 
         tracing::info!("🎉test {} finished🎉", module_path!());

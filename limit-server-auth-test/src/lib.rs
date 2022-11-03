@@ -8,8 +8,8 @@ use limit_server_auth::{
 };
 use limit_test_utils::{do_with_port, test_service, test_tasks};
 
-pub async fn test_request_auth(port: u16) {
-    tracing::info!("\t- test {} started", module_path!());
+pub async fn test_request_auth(port: u16) -> anyhow::Result<()> {
+    tracing::info!("\t- test {}::test_request_auth started", module_path!());
 
     let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
     let client = AuthServiceClientBuilder::new(format!("{}", module_path!()))
@@ -26,11 +26,12 @@ pub async fn test_request_auth(port: u16) {
     tracing::info!("rand_str: {:?}", rand_str);
     assert!(rand_str.is_ok());
 
-    tracing::info!("\t- test {} finished", module_path!());
+    tracing::info!("\t- test {}::test_request_auth finished", module_path!());
+    Ok(())
 }
 
-pub async fn test_do_auth(port: u16) {
-    tracing::info!("\t- test {} started", module_path!());
+pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
+    tracing::info!("\t- test {}::test_do_auth started", module_path!());
 
     let id = uuid::Uuid::new_v4().to_string();
     let (user_sec_key, user_pubkey) = limit_am::create_random_secret().unwrap();
@@ -107,6 +108,8 @@ pub async fn test_do_auth(port: u16) {
     let mut client = AuthServiceClientBuilder::new(format!("{}", module_path!()))
         .address(addr)
         .build();
+    
+    // passcode is correct
     let passcode = limit_am::aes256_encrypt_string(&shared_key, "123456").unwrap();
     let res = client
         .do_auth(DoAuthRequest {
@@ -116,7 +119,42 @@ pub async fn test_do_auth(port: u16) {
         .await;
     tracing::info!("res: {:?}", res);
     assert!(res.is_ok());
-    tracing::info!("\t- test {} finished", module_path!());
+
+    // passcode is incorrect
+    let passcode = limit_am::aes256_encrypt_string(&shared_key, "1234567").unwrap();
+    let res = client
+        .do_auth(DoAuthRequest {
+            id: id.clone(),
+            validated: passcode,
+        })
+        .await;
+    tracing::info!("res: {:?}", res);
+    assert!(res.is_err());
+
+    // passcode is empty
+    let passcode = "".to_string();
+    let res = client
+        .do_auth(DoAuthRequest {
+            id: id.clone(),
+            validated: passcode,
+        })
+        .await;
+    tracing::info!("res: {:?}", res);
+    assert!(res.is_err());
+
+    // passcode failed to decrypt
+    let passcode = "123456".to_string();
+    let res = client
+        .do_auth(DoAuthRequest {
+            id: id.clone(),
+            validated: passcode,
+        })
+        .await;
+    tracing::info!("res: {:?}", res);
+    assert!(res.is_err());
+
+    tracing::info!("\t- test {}::test_do_auth finished", module_path!());
+    Ok(())
 }
 
 pub async fn integration_test() {

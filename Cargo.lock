@@ -884,9 +884,10 @@ dependencies = [
 [[package]]
 name = "limit-am"
 version = "0.1.0"
-source = "git+https://github.com/Limit-IM/limit-am?rev=00af23e46b8fd4a277fefffa733cf172db33db6f#00af23e46b8fd4a277fefffa733cf172db33db6f"
+source = "git+https://github.com/Limit-IM/limit-am?rev=62a18bcf9000d854d9e828b92fb47a4fef697512#62a18bcf9000d854d9e828b92fb47a4fef697512"
 dependencies = [
  "aes",
+ "anyhow",
  "base64",
  "elliptic-curve",
  "p256",
@@ -1002,6 +1003,7 @@ dependencies = [
 name = "limit-test-utils"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "crossbeam-channel",
  "futures",
