@@ -1,7 +1,9 @@
 [package]
-name = "limit-server-auth"
+name = "limit-server-message"
 version = "0.1.0"
 edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1"
@@ -17,9 +19,10 @@ volo-grpc = "*"   # we recommend to use the latest framework version for new fea
 volo-gen = { path = "../volo-gen" }
 rand = "*"
 tracing = "0.1"
+futures = "*"
 
 limit-db = { path = "../limit-db" }
-limit-am = { path = "../limit-am" }
+limit-am = { git = "https://github.com/Limit-IM/limit-am",rev = "62a18bcf9000d854d9e828b92fb47a4fef697512"}
 limit-config = {path = "../limit-config"}
 
 [dependencies.diesel]
@@ -35,8 +38,3 @@ features = [
     "macro-diagnostics",
     "serde",
 ]
-
-[dev-dependencies]
-limit-test-utils = {path = "../limit-test-utils"}
-crossbeam-channel = "*"
-futures = "*"

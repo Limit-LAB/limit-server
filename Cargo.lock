@@ -1012,6 +1012,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "limit-server-message"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "diesel",
+ "futures",
+ "jsonwebtoken",
+ "limit-am 0.1.0 (git+https://github.com/Limit-IM/limit-am?rev=62a18bcf9000d854d9e828b92fb47a4fef697512)",
+ "limit-config",
+ "limit-db",
+ "pilota",
+ "rand",
+ "serde",
+ "tokio",
+ "tracing",
+ "uuid",
+ "volo",
+ "volo-gen",
+ "volo-grpc",
+]
+
+[[package]]
 name = "limit-test-utils"
 version = "0.1.0"
 dependencies = [
@@ -1031,6 +1055,21 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+ "volo",
+ "volo-grpc",
+]
+
+[[package]]
+name = "limit-utils"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "futures",
+ "lazy_static",
+ "motore",
+ "tokio",
+ "tokio-util",
+ "tracing",
  "volo",
  "volo-grpc",
 ]

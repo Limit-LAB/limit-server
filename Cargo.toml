@@ -38,9 +38,15 @@ members = [
     "limit-server-auth",
     "limit-server-auth-test",
 
+    "limit-server-message",
+
     "limit-db",
     "limit-config",
     "limit-test-utils",
+
+    "limit-utils",
+
+    "volo-gen"
 ]
 
 [profile.release]

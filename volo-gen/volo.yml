@@ -1,0 +1,13 @@
+entries:
+  default:
+    protocol: protobuf
+    filename: volo_gen.rs
+    idls:
+    - source: local
+      path: ../idl/auth.proto
+      includes:
+      - ../idl
+    - source: local
+      path: ../idl/message.proto
+      includes:
+      - ../idl

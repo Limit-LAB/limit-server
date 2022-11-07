@@ -1,0 +1,40 @@
+syntax = "proto3";
+package limit.message;
+
+import "google/protobuf/any.proto";
+import "auth.proto";
+
+message MessageReceiver {
+    string id = 1;
+    string server = 2;
+}
+
+message Message {
+    // uuid of the message
+    // better uuid v7 for sql better performance
+    // could only be empty for sender
+    string message_id = 1;
+    // sent time of the message
+    int64 timestamp = 2;
+    // sender uuid of the message
+    string sender = 3;
+    // receiver uuid of the message
+    MessageReceiver receiver = 4;
+    // text should be encrypted
+    // if using v1 or v2 version text could be empty
+    string text = 5;
+
+    map<string, google.protobuf.Any> extensions = 6;
+}
+
+message ReceiveMessagesRequest {
+   // auth
+    limit.auth.Auth token = 1;
+}
+
+service MessageService {
+   // receiving all messages from the server
+   rpc ReceiveMessages (ReceiveMessagesRequest) returns (stream Message);
+   // sending message to the server
+   rpc SendMessage (Message) returns (Message);
+}

@@ -1,0 +1,18 @@
+[package]
+name = "limit-utils"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tracing = "0.1"
+tokio = "1"
+tokio-util = "*"
+lazy_static = "*"
+async-trait = "*"
+futures = "*"
+
+motore = "*"
+volo = "*"        # we recommend to use the latest framework version for new features and bug fixes
+volo-grpc = "*"   # we recommend to use the latest framework version for new features and bug fixes
