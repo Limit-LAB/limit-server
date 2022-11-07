@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "*"
-lazy_static = "*"
 crossbeam-channel = "*"
 toml = "*"
 volo = "*"

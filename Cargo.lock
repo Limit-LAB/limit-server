@@ -1020,7 +1020,6 @@ dependencies = [
  "crossbeam-channel",
  "futures",
  "jsonwebtoken",
- "lazy_static",
  "limit-am 0.1.0",
  "limit-config",
  "limit-db",

@@ -1,5 +1,5 @@
 use crossbeam_channel::{Receiver, Sender};
-use std::io::Read;
+use once_cell::sync::Lazy;
 
 pub fn mock_config() -> limit_config::Config {
     use limit_config::*;
@@ -29,23 +29,19 @@ pub fn mock_config() -> limit_config::Config {
         .clone()
 }
 
-lazy_static::lazy_static! {
-    pub static ref AVAILABLE_PORTS_CHANNEL: (Sender<u16>, Receiver<u16>) = {
-        let mut conf_file = std::fs::File::open("integration_test_conf.toml").unwrap();
-        let mut conf_str = String::new();
-        conf_file.read_to_string(&mut conf_str).unwrap();
-        let conf: toml::Value = toml::from_str(&conf_str).unwrap();
-        let ports = conf["ports"]["available"]
-            .as_str()
-            .unwrap()
-            .split('-')
-            .map(|number| number.parse::<u16>().unwrap())
-            .collect::<Vec<u16>>();
-        let (s, r) = crossbeam_channel::bounded((ports[1] - ports[0]) as _);
-        (ports[0]..ports[1]).for_each(|p| s.clone().send(p).unwrap());
-        (s, r)
-    };
-}
+static AVAILABLE_PORTS_CHANNEL: Lazy<(Sender<u16>, Receiver<u16>)> = Lazy::new(|| {
+    let conf_str = std::fs::read_to_string("integration_test_conf.toml").unwrap();
+    let conf: toml::Value = toml::from_str(&conf_str).unwrap();
+    let ports = conf["ports"]["available"]
+        .as_str()
+        .unwrap()
+        .split('-')
+        .map(|number| number.parse::<u16>().unwrap())
+        .collect::<Vec<u16>>();
+    let (s, r) = crossbeam_channel::bounded((ports[1] - ports[0]) as _);
+    (ports[0]..ports[1]).for_each(|p| s.send(p).unwrap());
+    (s, r)
+});
 
 pub async fn get_available_port() -> u16 {
     let r = AVAILABLE_PORTS_CHANNEL.1.clone();
