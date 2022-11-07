@@ -166,7 +166,7 @@ fn test_user_model() {
     assert_eq!(rows_inserted, 1);
 
     let users = USER::table.load::<User>(&mut con).unwrap();
-    assert!(users.len() >= 1);
+    assert!(!users.is_empty());
     let profile_of_username = USER_PROFILE::table
         .inner_join(USER::table)
         .filter(USER::PUBKEY.eq("xdddd"))
@@ -174,5 +174,5 @@ fn test_user_model() {
         .select(USER_PROFILE::all_columns)
         .load::<Profile>(&mut con)
         .unwrap();
-    assert!(profile_of_username.len() >= 1);
+    assert!(!profile_of_username.is_empty());
 }

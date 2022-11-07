@@ -12,7 +12,7 @@ pub async fn test_request_auth(port: u16) -> anyhow::Result<()> {
     tracing::info!("\t- test {}::test_request_auth started", module_path!());
 
     let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
-    let client = AuthServiceClientBuilder::new(format!("{}", module_path!()))
+    let client = AuthServiceClientBuilder::new(module_path!())
         .address(addr)
         .build();
 
@@ -105,10 +105,10 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     config().unwrap();
 
     let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
-    let mut client = AuthServiceClientBuilder::new(format!("{}", module_path!()))
+    let mut client = AuthServiceClientBuilder::new(module_path!())
         .address(addr)
         .build();
-    
+
     // passcode is correct
     let passcode = limit_am::aes256_encrypt_string(&shared_key, "123456").unwrap();
     let res = client

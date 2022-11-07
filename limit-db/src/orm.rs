@@ -16,9 +16,9 @@ impl From<uuid::Uuid> for Uuid {
     }
 }
 
-impl Into<Uuid> for String {
-    fn into(self) -> Uuid {
-        Uuid(uuid::Uuid::parse_str(self.as_str()).unwrap().to_string())
+impl From<String> for Uuid {
+    fn from(val: String) -> Self {
+        Uuid(uuid::Uuid::parse_str(val.as_str()).unwrap().to_string())
     }
 }
 
@@ -36,10 +36,10 @@ where
 #[diesel(sql_type = sql_types::Text)]
 pub struct Duration(pub String);
 
-impl Into<Duration> for String {
-    fn into(self) -> Duration {
+impl From<String> for Duration {
+    fn from(val: String) -> Self {
         Duration(
-            std::time::Duration::from_secs(self.parse().unwrap())
+            std::time::Duration::from_secs(val.parse().unwrap())
                 .as_secs()
                 .to_string(),
         )
@@ -52,9 +52,9 @@ impl From<std::time::Duration> for Duration {
     }
 }
 
-impl Into<Duration> for Option<String> {
-    fn into(self) -> Duration {
-        if let Some(s) = self {
+impl From<Option<String>> for Duration {
+    fn from(val: Option<String>) -> Self {
+        if let Some(s) = val {
             Duration(
                 std::time::Duration::from_secs(s.parse().unwrap())
                     .as_secs()
@@ -80,10 +80,10 @@ where
 #[diesel(sql_type = sql_types::Text)]
 pub struct DateTime(pub String);
 
-impl Into<DateTime> for String {
-    fn into(self) -> DateTime {
+impl From<String> for DateTime {
+    fn from(val: String) -> Self {
         DateTime(
-            chrono::DateTime::parse_from_rfc3339(self.as_str())
+            chrono::DateTime::parse_from_rfc3339(val.as_str())
                 .unwrap()
                 .to_string(),
         )
@@ -134,10 +134,10 @@ impl From<crate::user::Visibility> for Visibility {
     }
 }
 
-impl Into<Visibility> for String {
-    fn into(self) -> Visibility {
+impl From<String> for Visibility {
+    fn from(val: String) -> Self {
         Visibility(
-            crate::user::Visibility::from_str(self.as_str())
+            crate::user::Visibility::from_str(val.as_str())
                 .unwrap()
                 .to_string(),
         )
