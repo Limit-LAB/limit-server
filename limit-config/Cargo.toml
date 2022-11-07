@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 jsonwebtoken = "8.1"
 serde = { version = "1.0", features = ["derive"] }
-limit-am = { git = "https://github.com/Limit-IM/limit-am",rev = "62a18bcf9000d854d9e828b92fb47a4fef697512"}
+limit-am = { path = "../limit-am" }
 chrono = { version = "0.4", features = ["serde"] }
 once_cell = "*"
 

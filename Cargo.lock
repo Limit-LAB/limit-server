@@ -884,6 +884,18 @@ dependencies = [
 [[package]]
 name = "limit-am"
 version = "0.1.0"
+dependencies = [
+ "aes",
+ "anyhow",
+ "base64",
+ "elliptic-curve",
+ "p256",
+ "rand",
+]
+
+[[package]]
+name = "limit-am"
+version = "0.1.0"
 source = "git+https://github.com/Limit-IM/limit-am?rev=62a18bcf9000d854d9e828b92fb47a4fef697512#62a18bcf9000d854d9e828b92fb47a4fef697512"
 dependencies = [
  "aes",
@@ -900,7 +912,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "jsonwebtoken",
- "limit-am",
+ "limit-am 0.1.0",
  "once_cell",
  "serde",
  "uuid",
@@ -932,7 +944,7 @@ dependencies = [
  "chrono",
  "futures",
  "jsonwebtoken",
- "limit-am",
+ "limit-am 0.1.0",
  "limit-config",
  "limit-db",
  "limit-server-auth",
@@ -958,7 +970,7 @@ dependencies = [
  "diesel",
  "futures",
  "jsonwebtoken",
- "limit-am",
+ "limit-am 0.1.0",
  "limit-config",
  "limit-db",
  "limit-test-utils",
@@ -984,7 +996,7 @@ dependencies = [
  "diesel",
  "futures",
  "jsonwebtoken",
- "limit-am",
+ "limit-am 0.1.0 (git+https://github.com/Limit-IM/limit-am?rev=62a18bcf9000d854d9e828b92fb47a4fef697512)",
  "limit-config",
  "limit-db",
  "limit-server-auth",
@@ -1009,7 +1021,7 @@ dependencies = [
  "futures",
  "jsonwebtoken",
  "lazy_static",
- "limit-am",
+ "limit-am 0.1.0",
  "limit-config",
  "limit-db",
  "limit-server-auth",

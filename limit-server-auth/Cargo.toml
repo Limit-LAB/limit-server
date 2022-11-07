@@ -19,7 +19,7 @@ rand = "*"
 tracing = "0.1"
 
 limit-db = { path = "../limit-db" }
-limit-am = { git = "https://github.com/Limit-IM/limit-am",rev = "62a18bcf9000d854d9e828b92fb47a4fef697512"}
+limit-am = { path = "../limit-am" }
 limit-config = {path = "../limit-config"}
 
 [dependencies.diesel]
