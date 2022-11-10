@@ -5,6 +5,7 @@ use motore::Service;
 use r2d2::Pool;
 use volo_grpc::Request;
 
+pub mod message;
 pub mod orm;
 pub mod schema;
 pub mod user;
@@ -67,6 +68,7 @@ where
     }
 }
 
+#[derive(Debug, Clone)]
 /// DB Service Layer
 pub struct DBLayer;
 

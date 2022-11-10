@@ -51,6 +51,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-channel"
+version = "1.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e14485364214912d3b19cc3435dde4df66065127f05fa0d75c712f36f12c2f28"
+dependencies = [
+ "concurrent-queue",
+ "event-listener",
+ "futures-core",
+]
+
+[[package]]
 name = "async-recursion"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -151,6 +162,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec8a7b6a70fde80372154c65702f00a0f56f3e1c36abbc6c440484be248856db"
 
 [[package]]
+name = "cache-padded"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
+
+[[package]]
 name = "cc"
 version = "1.0.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -196,6 +213,15 @@ checksum = "3538270d33cc669650c4b093848450d380def10c331d38c768e34cac80576e6e"
 dependencies = [
  "termcolor",
  "unicode-width",
+]
+
+[[package]]
+name = "concurrent-queue"
+version = "1.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af4780a44ab5696ea9e28294517f1fffb421a83a25af521333c838635509db9c"
+dependencies = [
+ "cache-padded",
 ]
 
 [[package]]
@@ -894,25 +920,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "limit-am"
-version = "0.1.0"
-source = "git+https://github.com/Limit-IM/limit-am?rev=62a18bcf9000d854d9e828b92fb47a4fef697512#62a18bcf9000d854d9e828b92fb47a4fef697512"
-dependencies = [
- "aes",
- "anyhow",
- "base64",
- "elliptic-curve",
- "p256",
- "rand",
-]
-
-[[package]]
 name = "limit-config"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "jsonwebtoken",
- "limit-am 0.1.0",
+ "limit-am",
  "once_cell",
  "serde",
  "uuid",
@@ -944,11 +957,12 @@ dependencies = [
  "chrono",
  "futures",
  "jsonwebtoken",
- "limit-am 0.1.0",
+ "limit-am",
  "limit-config",
  "limit-db",
  "limit-server-auth",
  "limit-server-auth-test",
+ "limit-server-message-test",
  "limit-test-utils",
  "once_cell",
  "serde",
@@ -965,18 +979,20 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "base64",
  "chrono",
  "crossbeam-channel",
  "diesel",
  "futures",
  "jsonwebtoken",
- "limit-am 0.1.0",
+ "limit-am",
  "limit-config",
  "limit-db",
  "limit-test-utils",
  "pilota",
  "rand",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "uuid",
@@ -996,7 +1012,7 @@ dependencies = [
  "diesel",
  "futures",
  "jsonwebtoken",
- "limit-am 0.1.0 (git+https://github.com/Limit-IM/limit-am?rev=62a18bcf9000d854d9e828b92fb47a4fef697512)",
+ "limit-am",
  "limit-config",
  "limit-db",
  "limit-server-auth",
@@ -1016,14 +1032,49 @@ name = "limit-server-message"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-channel",
  "async-trait",
  "chrono",
+ "dashmap",
  "diesel",
  "futures",
  "jsonwebtoken",
- "limit-am 0.1.0 (git+https://github.com/Limit-IM/limit-am?rev=62a18bcf9000d854d9e828b92fb47a4fef697512)",
+ "limit-am",
  "limit-config",
  "limit-db",
+ "limit-server-auth",
+ "limit-utils",
+ "pilota",
+ "rand",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "uuid",
+ "volo",
+ "volo-gen",
+ "volo-grpc",
+]
+
+[[package]]
+name = "limit-server-message-test"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "crossbeam-channel",
+ "diesel",
+ "futures",
+ "jsonwebtoken",
+ "limit-am",
+ "limit-config",
+ "limit-db",
+ "limit-server-auth",
+ "limit-server-message",
+ "limit-test-utils",
+ "limit-utils",
  "pilota",
  "rand",
  "serde",
@@ -1031,7 +1082,6 @@ dependencies = [
  "tracing",
  "uuid",
  "volo",
- "volo-gen",
  "volo-grpc",
 ]
 
@@ -1044,7 +1094,7 @@ dependencies = [
  "crossbeam-channel",
  "futures",
  "jsonwebtoken",
- "limit-am 0.1.0",
+ "limit-am",
  "limit-config",
  "limit-db",
  "limit-server-auth",

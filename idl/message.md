@@ -3,6 +3,8 @@ format should be `namespace/version/key`
 
 custom extensions is allowed
 
+values are json values
+
 ## basic gui actions
 ```json5
 {

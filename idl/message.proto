@@ -5,8 +5,7 @@ import "google/protobuf/any.proto";
 import "auth.proto";
 
 message MessageReceiver {
-    string id = 1;
-    string server = 2;
+
 }
 
 message Message {
@@ -19,12 +18,13 @@ message Message {
     // sender uuid of the message
     string sender = 3;
     // receiver uuid of the message
-    MessageReceiver receiver = 4;
+    string receiver_id = 4;
+    string receiver_server = 5;
     // text should be encrypted
     // if using v1 or v2 version text could be empty
-    string text = 5;
+    string text = 6;
 
-    map<string, google.protobuf.Any> extensions = 6;
+    map<string, string> extensions = 7;
 }
 
 message ReceiveMessagesRequest {
@@ -32,9 +32,21 @@ message ReceiveMessagesRequest {
     limit.auth.Auth token = 1;
 }
 
+message SendMessageRequest {
+    // auth
+    limit.auth.Auth token = 1;
+    // message
+    Message message = 2;
+}
+
+message SendMessageResponse {
+    // message id
+    string message_id = 1;
+}
+
 service MessageService {
    // receiving all messages from the server
    rpc ReceiveMessages (ReceiveMessagesRequest) returns (stream Message);
    // sending message to the server
-   rpc SendMessage (Message) returns (Message);
+   rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
 }

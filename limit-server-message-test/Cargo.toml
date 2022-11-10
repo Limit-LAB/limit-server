@@ -1,36 +1,33 @@
 [package]
-name = "limit-server-message"
+name = "limit-server-message-test"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+limit-server-auth = { path = "../limit-server-auth" }
+limit-server-message = { path = "../limit-server-message" }
+limit-test-utils = {path = "../limit-test-utils"}
+crossbeam-channel = "*"
+futures = "*"
 anyhow = "1"
 async-trait = "0.1"
 tokio = { version = "1", features = ["full"] }
 chrono = { version = "0.4", features = ["serde"] }
 jsonwebtoken = "8.1"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
 
 pilota = "*"      # we recommend to use the latest framework version for new features and bug fixes
 volo = "*"        # we recommend to use the latest framework version for new features and bug fixes
 volo-grpc = "*"   # we recommend to use the latest framework version for new features and bug fixes
-volo-gen = { path = "../volo-gen" }
 rand = "*"
 tracing = "0.1"
-futures = "*"
-async-channel = "*"
-dashmap = "*"
-tokio-util = "*"
 
-
-limit-server-auth = { path = "../limit-server-auth" }
 limit-db = { path = "../limit-db" }
 limit-am = { path = "../limit-am" }
 limit-config = {path = "../limit-config"}
-limit-utils = {path = "../limit-utils"}
+limit-utils = { path = "../limit-utils" }
 
 [dependencies.diesel]
 version = "2.0.0"
@@ -45,3 +42,4 @@ features = [
     "macro-diagnostics",
     "serde",
 ]
+

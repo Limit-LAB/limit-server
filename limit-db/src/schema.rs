@@ -1,5 +1,16 @@
 // @generated automatically by Diesel CLI.
-#![allow(non_snake_case)]
+
+diesel::table! {
+    MESSAGE (ID) {
+        ID -> Text,
+        TS -> BigInt,
+        SENDER -> Text,
+        RECEIVER_ID -> Text,
+        RECEIVER_SERVER -> Text,
+        TEXT -> Text,
+        EXTENSIONS -> Text,
+    }
+}
 
 diesel::table! {
     USER (ID) {
@@ -44,6 +55,7 @@ diesel::joinable!(USER_PRIVACY_SETTINGS -> USER (ID));
 diesel::joinable!(USER_PROFILE -> USER (ID));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    MESSAGE,
     USER,
     USER_LOGIN_PASSCODE,
     USER_PRIVACY_SETTINGS,

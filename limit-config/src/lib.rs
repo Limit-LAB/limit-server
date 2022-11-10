@@ -32,6 +32,8 @@ pub enum Metrics {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    /// server url
+    pub url: String,
     /// Database config
     pub database: Database,
     /// Database connection pool thread count
@@ -48,4 +50,7 @@ pub struct Config {
     pub server_secret_key: String,
     /// server public key
     pub server_public_key: String,
+    /// per user message on-the-fly limit
+    /// default is 100
+    pub per_user_message_on_the_fly_limit: usize,
 }

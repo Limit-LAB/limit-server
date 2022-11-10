@@ -29,6 +29,7 @@ features = [
 
 [dev-dependencies]
 limit-server-auth-test = { path = "./limit-server-auth-test" }
+limit-server-message-test = { path = "./limit-server-message-test" }
 limit-test-utils = { path = "./limit-test-utils" }
 tokio-util = "*"
 futures = "*"
@@ -39,6 +40,7 @@ members = [
     "limit-server-auth-test",
 
     "limit-server-message",
+    "limit-server-message-test",
 
     "limit-db",
     "limit-config",

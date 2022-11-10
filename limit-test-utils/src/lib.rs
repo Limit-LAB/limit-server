@@ -3,13 +3,14 @@ use once_cell::sync::Lazy;
 
 pub fn mock_config() -> limit_config::Config {
     use limit_config::*;
-    use limit_server_auth::JWTClaim;
+    use limit_server_auth::{JWTClaim, JWTSub};
     use uuid::Uuid;
 
     GLOBAL_CONFIG
         .get_or_init(|| {
             let (server_secret_key, server_public_key) = limit_am::create_random_secret().unwrap();
             Config {
+                url: "127.0.0.1:1313".to_string(),
                 database: Database::Sqlite {
                     path: "test.sqlite".to_string(),
                 },
@@ -17,19 +18,26 @@ pub fn mock_config() -> limit_config::Config {
                 database_pool_thread_count: 3,
                 admin_jwt: jsonwebtoken::encode(
                     &jsonwebtoken::Header::default(),
-                    &JWTClaim::new(Uuid::new_v4(), chrono::Duration::days(1)),
+                    &JWTClaim::new(
+                        JWTSub {
+                            id: Uuid::new_v4(),
+                            device_id: Uuid::new_v4().to_string(),
+                        },
+                        chrono::Duration::days(1),
+                    ),
                     &jsonwebtoken::EncodingKey::from_secret("mock_admin".as_bytes()),
                 )
                 .unwrap(),
                 metrics: Metrics::Terminal,
                 server_secret_key,
                 server_public_key,
+                per_user_message_on_the_fly_limit: 100,
             }
         })
         .clone()
 }
 
-static AVAILABLE_PORTS_CHANNEL: Lazy<(Sender<u16>, Receiver<u16>)> = Lazy::new(|| {
+pub static AVAILABLE_PORTS_CHANNEL: Lazy<(Sender<u16>, Receiver<u16>)> = Lazy::new(|| {
     let conf_str = std::fs::read_to_string("integration_test_conf.toml").unwrap();
     let conf: toml::Value = toml::from_str(&conf_str).unwrap();
     let ports = conf["ports"]["available"]
@@ -57,7 +65,7 @@ pub async fn get_available_port() -> u16 {
 #[macro_export]
 macro_rules! test_tasks {
     ($port: expr, $($task:expr),+ $(,)?) => {
-        vec![$(Box::pin($task($port)) as Pin<Box<dyn Future<Output = _> + Send>>),+];
+        vec![$(Box::pin($task($port)) as Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send>>),+];
     }
 }
 
@@ -111,4 +119,16 @@ where
     let res = f(port);
     AVAILABLE_PORTS_CHANNEL.0.clone().send(port).unwrap();
     res
+}
+
+#[macro_export]
+macro_rules! do_with_port_m {
+    ($f: expr) => {{
+        use limit_test_utils::get_available_port;
+        use limit_test_utils::AVAILABLE_PORTS_CHANNEL;
+        let port = get_available_port().await;
+        let res = $f(port);
+        AVAILABLE_PORTS_CHANNEL.0.clone().send(port).unwrap();
+        res
+    }};
 }

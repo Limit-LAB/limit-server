@@ -34,6 +34,7 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     tracing::info!("\t- test {}::test_do_auth started", module_path!());
 
     let id = uuid::Uuid::new_v4().to_string();
+    let device_id = uuid::Uuid::new_v4().to_string();
     let (user_sec_key, user_pubkey) = limit_am::create_random_secret().unwrap();
     let pubkey = limit_am::decode_public(&user_pubkey).unwrap();
     let shared_key = limit_am::key_exchange(
@@ -114,6 +115,7 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     let res = client
         .do_auth(DoAuthRequest {
             id: id.clone(),
+            device_id: device_id.clone(),
             validated: passcode,
         })
         .await;
@@ -125,6 +127,7 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     let res = client
         .do_auth(DoAuthRequest {
             id: id.clone(),
+            device_id: device_id.clone(),
             validated: passcode,
         })
         .await;
@@ -136,6 +139,7 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     let res = client
         .do_auth(DoAuthRequest {
             id: id.clone(),
+            device_id: device_id.clone(),
             validated: passcode,
         })
         .await;
@@ -147,6 +151,7 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     let res = client
         .do_auth(DoAuthRequest {
             id: id.clone(),
+            device_id: device_id.clone(),
             validated: passcode,
         })
         .await;

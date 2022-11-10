@@ -15,7 +15,8 @@ message RequestAuthResponse {
 
 message DoAuthRequest {
   string id = 1;
-  string validated = 2;
+  string device_id = 2;
+  string validated = 3;
 }
 
 service AuthService {
