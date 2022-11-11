@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1"
 async-trait = "0.1"
 tokio = { version = "1", features = ["full"] }
+tokio-util = "*"
 chrono = { version = "0.4", features = ["serde"] }
 jsonwebtoken = "8.1"
 serde = { version = "1.0", features = ["derive"] }
@@ -23,6 +24,16 @@ tracing = "0.1"
 limit-db = { path = "../limit-db" }
 limit-am = { path = "../limit-am" }
 limit-config = {path = "../limit-config"}
+limit-utils = {path = "../limit-utils"}
+
+[dependencies.redis]
+version = "*"
+features = [
+    "aio",
+    "cluster",
+    "r2d2",
+    "tokio-comp"
+]
 
 [dependencies.diesel]
 version = "2.0.0"

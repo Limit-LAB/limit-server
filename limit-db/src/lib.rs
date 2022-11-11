@@ -10,11 +10,14 @@ pub mod orm;
 pub mod schema;
 pub mod user;
 
+pub type RedisClient = redis::Client;
+
 /// add extension DB to `volo_grpc::Request`
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DBService<Inner> {
     inner: Inner,
     pool: DBPool,
+    redis_pool: redis::Client,
 }
 
 #[derive(Debug, Clone)]
@@ -64,9 +67,16 @@ where
 {
     async fn call(&mut self, cx: &mut Cx, mut req: Request<Req>) -> Result<I::Response, I::Error> {
         req.extensions_mut().insert(self.pool.clone());
+        req.extensions_mut().insert(self.redis_pool.clone());
         self.inner.call(cx, req).await
     }
 }
+
+static GLOBAL_DB_POOL: once_cell::sync::Lazy<DBPool> =
+    once_cell::sync::Lazy::new(|| DBPool::new(limit_config::GLOBAL_CONFIG.get().unwrap()));
+
+static GLOBAL_REDIS_CLIENT: once_cell::sync::Lazy<redis::Client> =
+    once_cell::sync::Lazy::new(|| redis::Client::open("redis://127.0.0.1:6379/").unwrap());
 
 #[derive(Debug, Clone)]
 /// DB Service Layer
@@ -78,7 +88,8 @@ impl<S> volo::Layer<S> for DBLayer {
     fn layer(self, inner: S) -> Self::Service {
         DBService {
             inner,
-            pool: DBPool::new(limit_config::GLOBAL_CONFIG.get().unwrap()),
+            pool: GLOBAL_DB_POOL.clone(),
+            redis_pool: GLOBAL_REDIS_CLIENT.clone(),
         }
     }
 }

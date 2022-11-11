@@ -1,8 +1,13 @@
 #![feature(type_alias_impl_trait)]
+#![feature(string_remove_matches)]
 
 use jsonwebtoken::Algorithm;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Validation;
+use limit_db::RedisClient;
+use limit_utils::execute_background_task;
+use limit_utils::BackgroundTask;
+use tokio_util::sync::ReusableBoxFuture;
 pub use volo_gen::limit::auth::*;
 
 use anyhow::Context;
@@ -128,32 +133,67 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                 Status::internal(e.to_string())
             })?
             .clone();
-        let id = &req.get_ref().id;
-        let passcode = generate_random_passcode();
-
-        // update random passcode for user
-        let sql = diesel::update(USER_LOGIN_PASSCODE::table)
-            .filter(USER_LOGIN_PASSCODE::ID.eq(&id))
-            .set(USER_LOGIN_PASSCODE::PASSCODE.eq(&passcode));
-
-        let res = Ok(Response::new(RequestAuthResponse {
-            rand_text: passcode.clone(),
-        }));
-
-        let _row_effected = run_sql!(
-            pool,
-            |mut conn| {
-                sql.execute(&mut conn).map_err(|e| {
-                    tracing::error!("{}", e);
-                    Status::internal(e.to_string())
-                })
-            },
-            |e| {
+        let mut redis = req
+            .extensions()
+            .get::<RedisClient>()
+            .context("no redis extended to service")
+            .map_err(|e| {
                 tracing::error!("{}", e);
                 Status::internal(e.to_string())
-            }
-        )?;
-        res
+            })?
+            .clone()
+            .get_connection()
+            .map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?;
+        let id = req.get_ref().id.clone();
+        let _id_guard = uuid::Uuid::parse_str(&id).map_err(|e| {
+            tracing::error!("{}", e);
+            Status::invalid_argument(e.to_string())
+        })?;
+        let passcode = generate_random_passcode();
+        // update random passcode for user
+        let _update_cache = redis::cmd("SET")
+            .arg(format!("{}:passcode", id))
+            .arg(&passcode)
+            .execute(&mut redis);
+        let sql = diesel::update(USER_LOGIN_PASSCODE::table)
+            .filter(USER_LOGIN_PASSCODE::ID.eq(id))
+            .set(USER_LOGIN_PASSCODE::PASSCODE.eq(passcode.clone()));
+        let run_sql = async move {
+            run_sql!(
+                pool,
+                |mut conn| {
+                    sql.execute(&mut conn).map_err(|e| {
+                        tracing::error!("{}", e);
+                        Status::internal(e.to_string())
+                    })
+                },
+                |e| {
+                    tracing::error!("{}", e);
+                    Status::internal(e.to_string())
+                }
+            )
+        };
+        execute_background_task(BackgroundTask {
+            name: "request_auth_update_user_passcode_db".to_string(),
+            task: ReusableBoxFuture::new(async move {
+                match run_sql.await {
+                    Ok(_) => {
+                        tracing::info!("request_auth_update_user_passcode_db success");
+                    }
+                    Err(e) => {
+                        tracing::error!("request_auth_update_user_passcode_db failed: {}", e);
+                    }
+                }
+            }),
+        })
+        .await;
+
+        Ok(Response::new(RequestAuthResponse {
+            rand_text: passcode.clone(),
+        }))
     }
 
     async fn do_auth(&self, req: Request<DoAuthRequest>) -> Result<Response<Auth>, Status> {
@@ -171,7 +211,25 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                 Status::internal(e.to_string())
             })?
             .clone();
-        let id = &req.get_ref().id;
+        let mut redis = req
+            .extensions()
+            .get::<RedisClient>()
+            .context("no redis extended to service")
+            .map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?
+            .clone()
+            .get_connection()
+            .map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?;
+        let id = req.get_ref().id.clone();
+        let uuid = uuid::Uuid::parse_str(&id).map_err(|e| {
+            tracing::error!("{}", e);
+            Status::invalid_argument(e.to_string())
+        })?;
         let passcode = &req.get_ref().validated;
         // get needed user info
         let sql_get_user_info = USER::table
@@ -184,28 +242,67 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                 USER_LOGIN_PASSCODE::PASSCODE,
                 USER_PRIVACY_SETTINGS::JWT_EXPIRATION,
             ));
-        // update random passcode for user
-        let sql_update_tmp_passcode = diesel::update(USER_LOGIN_PASSCODE::table)
-            .filter(USER_LOGIN_PASSCODE::ID.eq(&id))
-            .set(USER_LOGIN_PASSCODE::PASSCODE.eq(generate_random_passcode()));
 
-        let (id, sharedkey, expected_passcode, duration) = run_sql!(
-            pool,
-            |mut conn| {
-                sql_get_user_info
-                    .first::<(String, String, String, String)>(&mut conn)
+        let (sharedkey, expected_passcode, duration): (
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        ) = redis::pipe()
+            .cmd("GET")
+            .arg(format!("{}:sharedkey", id))
+            .cmd("GET")
+            .arg(format!("{}:passcode", id))
+            .cmd("GET")
+            .arg(format!("{}:duration", id))
+            .query(&mut redis)
+            .map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?;
+        let (sharedkey, expected_passcode, duration) =
+            // if missing then update cache
+            if sharedkey.is_none() || expected_passcode.is_none() || duration.is_none() {
+                tracing::info!("🈚 do_auth: cache miss");
+                let (id, sharedkey, expected_passcode, duration) = run_sql!(
+                    pool,
+                    |mut conn| {
+                        sql_get_user_info
+                            .first::<(String, String, String, String)>(&mut conn)
+                            .map_err(|e| {
+                                tracing::error!("{}", e);
+                                Status::internal(e.to_string())
+                            })
+                    },
+                    |e| {
+                        tracing::error!("{}", e);
+                        Status::internal(e.to_string())
+                    }
+                )?;
+                // update cache
+                redis::pipe()
+                    .cmd("SET")
+                    .arg(format!("{}:sharedkey", id))
+                    .arg(&sharedkey)
+                    .cmd("SET")
+                    .arg(format!("{}:passcode", id))
+                    .arg(&expected_passcode)
+                    .cmd("SET")
+                    .arg(format!("{}:duration", id))
+                    .arg(&duration)
+                    .query(&mut redis)
                     .map_err(|e| {
                         tracing::error!("{}", e);
                         Status::internal(e.to_string())
-                    })
-            },
-            |e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            }
-        )?;
-
-        let uuid = uuid::Uuid::parse_str(&id).unwrap();
+                    })?;
+                (sharedkey, expected_passcode, duration)
+            } else {
+                tracing::info!("🈶 do_auth: cache hit");
+                (
+                    sharedkey.unwrap(),
+                    expected_passcode.unwrap(),
+                    duration.unwrap(),
+                )
+            };
         let expire =
             chrono::Duration::from_std(std::time::Duration::from_secs(duration.parse().unwrap()))
                 .unwrap();
@@ -225,20 +322,42 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                 expire,
             ))?;
             // update random passcode for user
-            let _row_effected = run_sql!(
-                pool,
-                |mut conn| {
-                    sql_update_tmp_passcode.execute(&mut conn).map_err(|e| {
+            let _update_cache = redis::cmd("SET")
+                .arg(format!("{}:passcode", id))
+                .arg(&passcode)
+                .execute(&mut redis);
+            let sql = diesel::update(USER_LOGIN_PASSCODE::table)
+                .filter(USER_LOGIN_PASSCODE::ID.eq(id))
+                .set(USER_LOGIN_PASSCODE::PASSCODE.eq(generate_random_passcode()));
+            let run_sql = async move {
+                run_sql!(
+                    pool,
+                    |mut conn| {
+                        sql.execute(&mut conn).map_err(|e| {
+                            tracing::error!("{}", e);
+                            Status::internal(e.to_string())
+                        })
+                    },
+                    |e| {
                         tracing::error!("{}", e);
                         Status::internal(e.to_string())
-                    })
-                },
-                |e| {
-                    tracing::error!("{}", e);
-                    Status::internal(e.to_string())
-                }
-            )?;
-
+                    }
+                )
+            };
+            execute_background_task(BackgroundTask {
+                name: "do_auth_update_user_passcode_db".to_string(),
+                task: ReusableBoxFuture::new(async move {
+                    match run_sql.await {
+                        Ok(_) => {
+                            tracing::info!("do_auth_update_user_passcode_db success");
+                        }
+                        Err(e) => {
+                            tracing::error!("do_auth_update_user_passcode_db failed: {}", e);
+                        }
+                    }
+                }),
+            })
+            .await;
             Ok(Response::new(Auth { jwt }))
         } else {
             // invalid passcode

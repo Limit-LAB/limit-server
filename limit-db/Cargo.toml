@@ -10,12 +10,22 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "*"
 anyhow = "*"
 chrono = { version = "0.4", features = ["serde"] }
-lazy_static = "1.4.0"
 limit-config = { path = "../limit-config" }
+once_cell = "*"
 
 motore = "*"
 volo = "*"        # we recommend to use the latest framework version for new features and bug fixes
 volo-grpc = "*"   # we recommend to use the latest framework version for new features and bug fixes
+
+
+[dependencies.redis]
+version = "*"
+features = [
+    "aio",
+    "cluster",
+    "r2d2",
+    "tokio-comp"
+]
 
 [dependencies.uuid]
 version = "1.2.1"

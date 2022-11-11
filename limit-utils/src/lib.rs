@@ -60,3 +60,7 @@ pub async fn batch_execute_background_tasks(tasks: Vec<BackgroundTask>) {
         .collect::<Vec<_>>();
     futures::future::join_all(tesks).await;
 }
+
+pub async fn execute_background_task(task: BackgroundTask) {
+    GLOBAL_EVENT_LOOP.0.send(task).await.unwrap();
+}

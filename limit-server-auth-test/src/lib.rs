@@ -15,13 +15,9 @@ pub async fn test_request_auth(port: u16) -> anyhow::Result<()> {
     let client = AuthServiceClientBuilder::new(module_path!())
         .address(addr)
         .build();
+    let id = uuid::Uuid::new_v4().to_string();
 
-    let rand_str = client
-        .clone()
-        .request_auth(RequestAuthRequest {
-            id: "test".to_string(),
-        })
-        .await;
+    let rand_str = client.clone().request_auth(RequestAuthRequest { id }).await;
 
     tracing::info!("rand_str: {:?}", rand_str);
     assert!(rand_str.is_ok());

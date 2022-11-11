@@ -20,6 +20,7 @@ message DoAuthRequest {
 }
 
 service AuthService {
+  // redis id/passcode
   rpc RequestAuth(RequestAuthRequest) returns (RequestAuthResponse);
   rpc DoAuth(DoAuthRequest) returns (Auth);
 }
