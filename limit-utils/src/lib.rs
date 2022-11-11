@@ -1,4 +1,5 @@
 #![feature(type_alias_impl_trait)]
+use once_cell::sync::Lazy;
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::ReusableBoxFuture;
 
@@ -40,16 +41,17 @@ impl BackgroundWorker {
     }
 }
 
-lazy_static::lazy_static! {
-    static ref GLOBAL_EVENT_LOOP: (tokio::sync::mpsc::Sender<BackgroundTask>, tokio::sync::mpsc::Sender<ControlMessage>) = {
-        let (queue, queue_r) = tokio::sync::mpsc::channel(100);
-        let (control, control_r) = tokio::sync::mpsc::channel(100);
-        futures::executor::block_on(async move {
-            tokio::spawn(BackgroundWorker::event_loop(queue_r, control_r));
-        });
-        (queue, control)
-    };
-}
+static GLOBAL_EVENT_LOOP: Lazy<(
+    tokio::sync::mpsc::Sender<BackgroundTask>,
+    tokio::sync::mpsc::Sender<ControlMessage>,
+)> = Lazy::new(|| {
+    let (queue, queue_r) = tokio::sync::mpsc::channel(100);
+    let (control, control_r) = tokio::sync::mpsc::channel(100);
+    futures::executor::block_on(async move {
+        tokio::spawn(BackgroundWorker::event_loop(queue_r, control_r));
+    });
+    (queue, control)
+});
 
 pub async fn batch_execute_background_tasks(tasks: Vec<BackgroundTask>) {
     let tesks = tasks

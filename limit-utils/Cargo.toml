@@ -9,7 +9,7 @@ edition = "2021"
 tracing = "0.1"
 tokio = "1"
 tokio-util = "*"
-lazy_static = "*"
+once_cell = "*"
 async-trait = "*"
 futures = "*"
 
