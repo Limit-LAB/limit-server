@@ -1,15 +1,27 @@
-# LIMITS
-> Lemon's IM does not have ITS LIMITS
+# LIMITS: Lemon's IM does not have ITS LIMITS
 
 [![Rust](https://github.com/LemonHX/limit/actions/workflows/rust.yml/badge.svg)](https://github.com/LemonHX/limit/actions/workflows/rust.yml)
-![[JWT](http://jwt.io/)](http://jwt.io/img/badge-compatible.svg)
 ![lines](https://tokei.ekzhang.com/b1/github/limit-im/limit-server)
 
-[`中文版在这里啦~~`](README.zh-cn.md)
+**Technology Stack**
+
+![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=for-the-badge&logo=rust&logoColor=white)
+![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
+![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+![InfluxDB](https://img.shields.io/badge/InfluxDB-22ADF6?style=for-the-badge&logo=InfluxDB&logoColor=white)
+
+**Supported OS**
+
+![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+
 
 `LIMITS` is yet another fully open source, interoperable, decentralised real-time communication protocol!
 
 ---
+[`中文版在这里啦~~`](README.zh-cn.md)
 
 ## TL;DR WTF is that
 
