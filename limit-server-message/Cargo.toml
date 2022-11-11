@@ -32,6 +32,15 @@ limit-am = { path = "../limit-am" }
 limit-config = {path = "../limit-config"}
 limit-utils = {path = "../limit-utils"}
 
+[dependencies.redis]
+version = "*"
+features = [
+    "aio",
+    "cluster",
+    "r2d2",
+    "tokio-comp"
+]
+
 [dependencies.diesel]
 version = "2.0.0"
 features = ["sqlite", "uuid", "chrono", "r2d2"]

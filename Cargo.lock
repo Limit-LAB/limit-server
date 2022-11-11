@@ -1089,6 +1089,7 @@ dependencies = [
  "limit-utils",
  "pilota",
  "rand",
+ "redis",
  "serde",
  "serde_json",
  "tokio",

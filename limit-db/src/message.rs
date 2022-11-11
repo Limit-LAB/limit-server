@@ -29,3 +29,14 @@ pub struct Message {
     #[diesel(column_name = "EXTENSIONS")]
     pub extensions: String,
 }
+
+/// user subscribe to message queue
+#[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[diesel(table_name = MESSAGE_SUBSCRIPTIONS)]
+pub struct MessageSubscriptions {
+    #[diesel(column_name = "USER_ID")]
+    #[diesel(serialize_as = crate::orm::Uuid)]
+    pub user_id: String,
+    #[diesel(column_name = "SUBSCIBED_TO")]
+    pub subscibed_to: String,
+}

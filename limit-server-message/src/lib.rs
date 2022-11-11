@@ -2,42 +2,21 @@
 
 use anyhow::Context;
 use async_channel::{Receiver, Sender};
-use dashmap::DashMap;
-use diesel::RunQueryDsl;
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use limit_config::GLOBAL_CONFIG;
-use limit_db::run_sql;
-use limit_db::schema::MESSAGE;
-use limit_utils::{batch_execute_background_tasks, BackgroundTask};
+use limit_db::schema::{MESSAGE, MESSAGE_SUBSCRIPTIONS};
+use limit_db::{run_sql, RedisClient};
+use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
 pub use volo_gen::limit::message::*;
+use volo_grpc::codegen::StreamExt;
 use volo_grpc::{BoxStream, Request, Response, Status};
 
 #[derive(Debug, Clone)]
 // require db
 // require background worker
 // TODO: see if there is any message missing
-pub struct MessageService {
-    users: DashMap<
-        // id
-        String,
-        DashMap<
-            // device_id
-            String,
-            (
-                Sender<Result<Message, Status>>,
-                Receiver<Result<Message, Status>>,
-            ),
-        >,
-    >,
-}
-
-impl MessageService {
-    pub fn new() -> Self {
-        Self {
-            users: DashMap::new(),
-        }
-    }
-}
+pub struct MessageService;
 
 fn message_to_dbmessage(m: Message) -> limit_db::message::Message {
     limit_db::message::Message {
@@ -48,6 +27,17 @@ fn message_to_dbmessage(m: Message) -> limit_db::message::Message {
         receiver_server: m.receiver_server,
         text: m.text,
         extensions: serde_json::to_value(m.extensions).unwrap().to_string(),
+    }
+}
+fn dbmessage_to_message(m: limit_db::message::Message) -> Message {
+    Message {
+        message_id: m.message_id,
+        timestamp: m.timestamp,
+        sender: m.sender,
+        receiver_id: m.receiver_id,
+        receiver_server: m.receiver_server,
+        text: m.text,
+        extensions: serde_json::from_str(&m.extensions).unwrap(),
     }
 }
 
@@ -65,23 +55,81 @@ impl volo_gen::limit::message::MessageService for MessageService {
         let claim = limit_server_auth::decode_jwt(&auth.jwt)?;
         let ids = claim.sub.split("/").collect::<Vec<_>>();
         let id = ids[1];
-        let device_id = ids[0];
-        // TODO: create background worker for clean this user
-        let entry = self.users.entry(id.to_string()).or_insert_with(|| {
-            let map = DashMap::new();
-            map.insert(device_id.to_string(), {
-                let (sender, receiver) = async_channel::bounded(
-                    GLOBAL_CONFIG
-                        .get()
-                        .unwrap()
-                        .per_user_message_on_the_fly_limit,
-                );
-                (sender, receiver)
-            });
-            map
-        });
-        let receiver = entry.get(device_id).unwrap().1.clone();
-        Ok(Response::new(Box::pin(receiver)))
+        let pool = req
+            .extensions()
+            .get::<limit_db::DBPool>()
+            .context("no db extended to service")
+            .map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?
+            .clone();
+        let redis = req
+            .extensions()
+            .get::<RedisClient>()
+            .context("no redis extended to service")
+            .map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?
+            .clone();
+        let mut redis_connection = redis.get_connection().map_err(|e| {
+            tracing::error!("{}", e);
+            Status::internal(e.to_string())
+        })?;
+        let redis_async_connection = redis.get_async_connection().await.map_err(|e| {
+            tracing::error!("{}", e);
+            Status::internal(e.to_string())
+        })?;
+        let subsciptions: Option<Vec<String>> = redis::cmd("GET")
+            .arg(format!("{}:subscribed", id))
+            .query(&mut redis_connection)
+            .map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?;
+        let subsciptions = if subsciptions.is_none() {
+            tracing::info!("🈚 receive message cache miss");
+            let sql = MESSAGE_SUBSCRIPTIONS::table.filter(MESSAGE_SUBSCRIPTIONS::USER_ID.eq(id));
+            let subs = run_sql!(
+                pool,
+                |mut conn| {
+                    sql.load::<(String, String)>(&mut conn).map_err(|e| {
+                        tracing::error!("{}", e);
+                        Status::internal(e.to_string())
+                    })
+                },
+                |e| {
+                    tracing::error!("{}", e);
+                    Status::internal(e.to_string())
+                }
+            )?
+            .into_iter()
+            .map(|(_, a)| a)
+            .collect::<Vec<_>>();
+            subs
+        } else {
+            tracing::info!("🈶 receive message cache hit");
+            subsciptions.unwrap()
+        };
+        let mut pubsub = redis_async_connection.into_pubsub();
+        for sub in subsciptions {
+            pubsub.subscribe(sub).await.map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?;
+        }
+        let res = Box::pin(pubsub.into_on_message().map(|msg| {
+            Ok(dbmessage_to_message(
+                msg.get_payload()
+                    .map(|payload: String| serde_json::from_str(&payload).unwrap())
+                    .map_err(|e| {
+                        tracing::error!("{}", e);
+                        Status::internal(e.to_string())
+                    })?,
+            ))
+        }));
+        Ok(Response::new(res))
     }
 
     async fn send_message(
@@ -104,34 +152,27 @@ impl volo_gen::limit::message::MessageService for MessageService {
         message.message_id = message_id.to_string();
         let message2 = message.clone();
         if &message.receiver_server == current_server_url {
-            // TODO: cluster
-            let mut background_tasks = vec![];
-            if let Some(devices) = self.users.get(&message.receiver_id) {
-                let devices = devices.clone();
-                background_tasks.push(BackgroundTask {
-                    name: "send_message_to_all_local_online_devices".to_string(),
-                    task: ReusableBoxFuture::new(async move {
-                        let message = &message;
-                        futures::future::join_all(devices.into_iter().map(
-                            |(device, (s, _))| async move {
-                                tracing::info!("sending message to device {:?}", device);
-                                let res = s.clone().send(Ok(message.clone())).await;
-                                match res {
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        tracing::error!(
-                                            "sending message to device {:?} error {:?}",
-                                            device,
-                                            e
-                                        )
-                                    }
-                                }
-                            },
-                        ))
-                        .await;
-                    }),
-                })
-            }
+            let mut redis = req
+                .extensions()
+                .get::<RedisClient>()
+                .context("no redis extended to service")
+                .map_err(|e| {
+                    tracing::error!("{}", e);
+                    Status::internal(e.to_string())
+                })?
+                .clone()
+                .get_connection()
+                .map_err(|e| {
+                    tracing::error!("{}", e);
+                    Status::internal(e.to_string())
+                })?;
+
+            let message = message_to_dbmessage(message2);
+            redis::cmd("PUBLISH")
+                .arg(format!("message:{}", message.receiver_id))
+                .arg(serde_json::to_string(&message).unwrap())
+                .execute(&mut redis);
+
             // store message
             let pool = req
                 .extensions()
@@ -142,7 +183,7 @@ impl volo_gen::limit::message::MessageService for MessageService {
                     Status::internal(e.to_string())
                 })?
                 .clone();
-            let sql = diesel::insert_into(MESSAGE::table).values(message_to_dbmessage(message2));
+            let sql = diesel::insert_into(MESSAGE::table).values(message);
             let run_sql = async move {
                 run_sql!(
                     pool,
@@ -158,7 +199,7 @@ impl volo_gen::limit::message::MessageService for MessageService {
                     }
                 )
             };
-            background_tasks.push(BackgroundTask {
+            execute_background_task(BackgroundTask {
                 name: "store_message".to_string(),
                 task: ReusableBoxFuture::new(async move {
                     // TODO: save message
@@ -171,8 +212,8 @@ impl volo_gen::limit::message::MessageService for MessageService {
                         }
                     }
                 }),
-            });
-            batch_execute_background_tasks(background_tasks).await;
+            })
+            .await;
             Ok(Response::new(SendMessageResponse {
                 message_id: message_id.to_string(),
             }))

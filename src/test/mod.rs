@@ -19,7 +19,7 @@ fn integration_test() {
 
     tokio_run!(async {
         let tasks = vec![
-            tokio::spawn(limit_server_auth_test::integration_test()),
+            // tokio::spawn(limit_server_auth_test::integration_test()),
             tokio::spawn(limit_server_message_test::integration_test()),
         ];
         futures::future::join_all(tasks).await

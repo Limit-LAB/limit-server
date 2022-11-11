@@ -17,7 +17,7 @@ pub type RedisClient = redis::Client;
 pub struct DBService<Inner> {
     inner: Inner,
     pool: DBPool,
-    redis_pool: redis::Client,
+    redis_pool: RedisClient,
 }
 
 #[derive(Debug, Clone)]

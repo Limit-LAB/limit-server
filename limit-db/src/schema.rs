@@ -13,6 +13,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    MESSAGE_SUBSCRIPTIONS (USER_ID) {
+        USER_ID -> Text,
+        SUBSCIBED_TO -> Text,
+    }
+}
+
+diesel::table! {
     USER (ID) {
         ID -> Text,
         PUBKEY -> Text,
@@ -56,6 +63,7 @@ diesel::joinable!(USER_PROFILE -> USER (ID));
 
 diesel::allow_tables_to_appear_in_same_query!(
     MESSAGE,
+    MESSAGE_SUBSCRIPTIONS,
     USER,
     USER_LOGIN_PASSCODE,
     USER_PRIVACY_SETTINGS,

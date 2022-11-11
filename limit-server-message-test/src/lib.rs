@@ -4,8 +4,9 @@ use std::{future::Future, net::SocketAddr, pin::Pin};
 
 use futures::StreamExt;
 use limit_db::{
+    message::MessageSubscriptions,
     run_sql,
-    schema::{USER, USER_LOGIN_PASSCODE, USER_PRIVACY_SETTINGS},
+    schema::{MESSAGE_SUBSCRIPTIONS, USER, USER_LOGIN_PASSCODE, USER_PRIVACY_SETTINGS},
     DBLayer, DBPool,
 };
 use limit_server_auth::{AuthService, AuthServiceClientBuilder, AuthServiceServer, DoAuthRequest};
@@ -170,6 +171,19 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
                         tracing::error!("Error: {}", e);
                     }
                 );
+                run_sql!(
+                    pool,
+                    |mut con| diesel::insert_into(MESSAGE_SUBSCRIPTIONS::table)
+                        .values(MessageSubscriptions {
+                            user_id: id.clone(),
+                            subscibed_to: format!("message:{}", id.clone())
+                        })
+                        .execute(&mut con)
+                        .unwrap(),
+                    |e| {
+                        tracing::error!("Error: {}", e);
+                    }
+                );
                 Ok::<(), ()>(())
             };
             config().unwrap();
@@ -250,7 +264,7 @@ pub async fn integration_test() {
 
         test_service! {
             port,
-            MessageServiceServer::new(MessageService::new())
+            MessageServiceServer::new(MessageService)
                 .layer_front(DBLayer),
             tasks
         };
