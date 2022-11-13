@@ -11,3 +11,7 @@ entries:
       path: ../idl/message.proto
       includes:
       - ../idl
+    - source: local
+      path: ../idl/message.sync.proto
+      includes:
+      - ../idl

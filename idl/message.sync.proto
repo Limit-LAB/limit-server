@@ -1,0 +1,26 @@
+syntax = "proto3";
+package limit.message.sync;
+
+import "message.proto";
+import "auth.proto";
+
+message SynchronizeRequest {
+    // auth
+    limit.auth.Auth token = 1;
+    // target subscriber
+    string subscriber = 2;
+    oneof starting_point {
+        // synchronization start timestamp
+        // the default is now
+        int64 timestamp = 3;
+        // the ID of the message to start synchronization
+        string message_id = 4;
+    }
+    // offset for synchronization
+    // the default is +50 (50 messages backwards from the starting point)
+    sint32 offset = 5;
+}
+
+service SynchronizeService {
+    rpc Synchronize(SynchronizeRequest) returns (stream limit.message.Message);
+}

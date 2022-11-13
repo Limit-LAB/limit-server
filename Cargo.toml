@@ -42,6 +42,8 @@ members = [
     "limit-server-message",
     "limit-server-message-test",
 
+    "limit-server-message-sync",
+
     "limit-db",
     "limit-config",
     "limit-test-utils",
