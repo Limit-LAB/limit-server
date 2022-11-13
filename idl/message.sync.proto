@@ -21,6 +21,10 @@ message SynchronizeRequest {
     sint32 offset = 5;
 }
 
+message SynchronizeResponse {
+    repeated limit.message.Message message = 1;
+}
+
 service SynchronizeService {
-    rpc Synchronize(SynchronizeRequest) returns (stream limit.message.Message);
+    rpc Synchronize(SynchronizeRequest) returns (SynchronizeResponse);
 }

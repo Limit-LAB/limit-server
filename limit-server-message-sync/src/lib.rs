@@ -7,9 +7,12 @@ use limit_db::schema::{MESSAGE, MESSAGE_SUBSCRIPTIONS};
 use limit_db::{run_sql, RedisClient};
 use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
-pub use volo_gen::limit::message::{*, sync::{*, synchronize_request::*}};
+pub use volo_gen::limit::message::{
+    sync::{synchronize_request::*, *},
+    *,
+};
 use volo_grpc::codegen::StreamExt;
-use volo_grpc::{BoxStream, Request, Response, Status};
+use volo_grpc::{Request, Response, Status};
 
 #[derive(Debug, Clone)]
 pub struct SynchronizeService;
@@ -19,7 +22,7 @@ impl volo_gen::limit::message::sync::SynchronizeService for SynchronizeService {
     async fn synchronize(
         &self,
         req: Request<SynchronizeRequest>,
-    ) -> Result<Response<BoxStream<'static, Result<Message, Status>>>, Status> {
+    ) -> Result<Response<SynchronizeResponse>, Status> {
         Err(Status::internal("no implementation"))
     }
 }
