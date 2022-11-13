@@ -37,6 +37,6 @@ pub struct MessageSubscriptions {
     #[diesel(column_name = "USER_ID")]
     #[diesel(serialize_as = crate::orm::Uuid)]
     pub user_id: String,
-    #[diesel(column_name = "SUBSCIBED_TO")]
-    pub subscibed_to: String,
+    #[diesel(column_name = "SUBSCRIBED_TO")]
+    pub subscribed_to: String,
 }

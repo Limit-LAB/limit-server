@@ -1,7 +1,6 @@
 #![feature(type_alias_impl_trait)]
 
 use anyhow::Context;
-use async_channel::{Receiver, Sender};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use limit_config::GLOBAL_CONFIG;
 use limit_db::schema::{MESSAGE, MESSAGE_SUBSCRIPTIONS};
@@ -81,14 +80,14 @@ impl volo_gen::limit::message::MessageService for MessageService {
             tracing::error!("{}", e);
             Status::internal(e.to_string())
         })?;
-        let subsciptions: Option<Vec<String>> = redis::cmd("GET")
+        let subscriptions: Option<Vec<String>> = redis::cmd("GET")
             .arg(format!("{}:subscribed", id))
             .query(&mut redis_connection)
             .map_err(|e| {
                 tracing::error!("{}", e);
                 Status::internal(e.to_string())
             })?;
-        let subsciptions = if subsciptions.is_none() {
+        let subscriptions = if subscriptions.is_none() {
             tracing::info!("🈚 receive message cache miss");
             let sql = MESSAGE_SUBSCRIPTIONS::table.filter(MESSAGE_SUBSCRIPTIONS::USER_ID.eq(id));
             let subs = run_sql!(
@@ -110,10 +109,10 @@ impl volo_gen::limit::message::MessageService for MessageService {
             subs
         } else {
             tracing::info!("🈶 receive message cache hit");
-            subsciptions.unwrap()
+            subscriptions.unwrap()
         };
         let mut pubsub = redis_async_connection.into_pubsub();
-        for sub in subsciptions {
+        for sub in subscriptions {
             pubsub.subscribe(sub).await.map_err(|e| {
                 tracing::error!("{}", e);
                 Status::internal(e.to_string())

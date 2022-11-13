@@ -176,7 +176,7 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
                     |mut con| diesel::insert_into(MESSAGE_SUBSCRIPTIONS::table)
                         .values(MessageSubscriptions {
                             user_id: id.clone(),
-                            subscibed_to: format!("message:{}", id.clone())
+                            subscribed_to: format!("message:{}", id.clone())
                         })
                         .execute(&mut con)
                         .unwrap(),

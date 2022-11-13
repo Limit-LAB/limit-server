@@ -28,7 +28,7 @@ message Message {
 }
 
 message ReceiveMessagesRequest {
-   // auth
+    // auth
     limit.auth.Auth token = 1;
 }
 

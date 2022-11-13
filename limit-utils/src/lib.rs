@@ -54,11 +54,11 @@ static GLOBAL_EVENT_LOOP: Lazy<(
 });
 
 pub async fn batch_execute_background_tasks(tasks: Vec<BackgroundTask>) {
-    let tesks = tasks
+    let tasks = tasks
         .into_iter()
         .map(|task| GLOBAL_EVENT_LOOP.0.send(task))
         .collect::<Vec<_>>();
-    futures::future::join_all(tesks).await;
+    futures::future::join_all(tasks).await;
 }
 
 pub async fn execute_background_task(task: BackgroundTask) {

@@ -15,7 +15,7 @@ diesel::table! {
 diesel::table! {
     MESSAGE_SUBSCRIPTIONS (USER_ID) {
         USER_ID -> Text,
-        SUBSCIBED_TO -> Text,
+        SUBSCRIBED_TO -> Text,
     }
 }
 

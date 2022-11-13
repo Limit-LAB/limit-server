@@ -91,7 +91,7 @@ pub struct PrivacySettings {
     #[diesel(column_name = "JOINED_GROUPS")]
     #[diesel(serialize_as = crate::orm::Visibility)]
     pub groups: String,
-    /// could foward messages to other users
+    /// could forward messages to other users
     #[diesel(column_name = "FORWARDS")]
     #[diesel(serialize_as = crate::orm::Visibility)]
     pub forwards: String,
