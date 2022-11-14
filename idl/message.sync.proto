@@ -8,7 +8,7 @@ message SynchronizeRequest {
     // auth
     limit.auth.Auth token = 1;
     // target subscriber
-    string subscriber = 2;
+    string subscription = 2;
     oneof starting_point {
         // synchronization start timestamp
         // the default is now
