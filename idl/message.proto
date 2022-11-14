@@ -30,6 +30,9 @@ message Message {
 message ReceiveMessagesRequest {
     // auth
     limit.auth.Auth token = 1;
+
+    // TODO: specify subscription channel
+    // string subscription = 2;
 }
 
 message SendMessageRequest {
@@ -37,6 +40,9 @@ message SendMessageRequest {
     limit.auth.Auth token = 1;
     // message
     Message message = 2;
+
+    // TODO: specify subscription channel
+    // string subscription = 2;
 }
 
 message SendMessageResponse {

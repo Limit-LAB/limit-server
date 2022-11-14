@@ -80,6 +80,7 @@ impl volo_gen::limit::message::MessageService for MessageService {
             tracing::error!("{}", e);
             Status::internal(e.to_string())
         })?;
+        // TODO: specify subscription channel
         let subscriptions: Option<Vec<String>> = redis::cmd("GET")
             .arg(format!("{}:subscribed", id))
             .query(&mut redis_connection)
@@ -141,6 +142,7 @@ impl volo_gen::limit::message::MessageService for MessageService {
             Status::unauthenticated("no auth token")
         })?;
         let _claim = limit_server_auth::decode_jwt(&auth.jwt)?;
+        // encrypted message
         let message: Message = req.get_ref().message.clone().ok_or_else(|| {
             tracing::error!("message is empty");
             Status::cancelled("message is empty")
@@ -166,6 +168,7 @@ impl volo_gen::limit::message::MessageService for MessageService {
                     Status::internal(e.to_string())
                 })?;
 
+            // TODO: specify subscription channel
             let message = message_to_dbmessage(message2);
             redis::cmd("PUBLISH")
                 .arg(format!("message:{}", message.receiver_id))
