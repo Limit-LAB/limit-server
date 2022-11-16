@@ -10,10 +10,10 @@ use limit_db::{
     DBLayer, DBPool,
 };
 use limit_server_auth::{AuthService, AuthServiceClientBuilder, AuthServiceServer, DoAuthRequest};
-use limit_server_message::MessageService;
-use limit_server_message::{
-    Message, MessageServiceClientBuilder, MessageServiceServer, ReceiveMessagesRequest,
-    SendMessageRequest,
+use limit_server_event::{Detail, EventService};
+use limit_server_event::{
+    Event, EventServiceClientBuilder, EventServiceServer, Message, ReceiveEventsRequest,
+    SendEventRequest,
 };
 use limit_test_utils::{do_with_port, test_service, test_tasks};
 
@@ -209,14 +209,14 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
             })
             .await;
         let auth2 = res.unwrap();
-        let mut client1 = MessageServiceClientBuilder::new(format!("{:?}:1", module_path!()))
+        let mut client1 = EventServiceClientBuilder::new(format!("{:?}:1", module_path!()))
             .address(addr)
             .build();
-        let mut client2 = MessageServiceClientBuilder::new(format!("{:?}:1", module_path!()))
+        let mut client2 = EventServiceClientBuilder::new(format!("{:?}:1", module_path!()))
             .address(addr)
             .build();
         let receive = client2
-            .receive_messages(ReceiveMessagesRequest {
+            .receive_events(ReceiveEventsRequest {
                 token: Some(auth2.get_ref().clone()),
             })
             .await;
@@ -224,16 +224,18 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
         tracing::info!("client {:?} online", id2);
         tracing::info!("client {:?} sending message", id1);
         let send_message = client1
-            .send_message(SendMessageRequest {
+            .send_event(SendEventRequest {
                 token: Some(auth1.get_ref().clone()),
-                message: Some(Message {
-                    message_id: "".to_string(),
+                event: Some(Event {
+                    event_id: "".to_string(),
                     timestamp: 0,
                     sender: id1.clone(),
-                    receiver_id: id2,
-                    receiver_server: GLOBAL_CONFIG.get().unwrap().url.clone(),
-                    text: "hello".to_string(),
-                    extensions: Default::default(),
+                    detail: Some(Detail::Message(Message {
+                        receiver_id: id2,
+                        receiver_server: GLOBAL_CONFIG.get().unwrap().url.clone(),
+                        text: "hello".to_string(),
+                        extensions: Default::default(),
+                    })),
                 }),
             })
             .await;
@@ -247,8 +249,14 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
             .await
             .unwrap()
             .unwrap()
-            .text
-            .clone();
+            .detail
+            .unwrap();
+
+        let received = match received {
+            Detail::Message(ref m) => &m.text,
+            _ => unreachable!(),
+        };
+        
         assert_eq!(received, "hello");
     })
     .await
@@ -264,7 +272,7 @@ pub async fn integration_test() {
 
         test_service! {
             port,
-            MessageServiceServer::new(MessageService)
+            EventServiceServer::new(EventService)
                 .layer_front(DBLayer),
             tasks
         };

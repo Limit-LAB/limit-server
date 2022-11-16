@@ -8,10 +8,10 @@ entries:
       includes:
       - ../idl
     - source: local
-      path: ../idl/message.proto
+      path: ../idl/event.proto
       includes:
       - ../idl
     - source: local
-      path: ../idl/message.sync.proto
+      path: ../idl/event.sync.proto
       includes:
       - ../idl

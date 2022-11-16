@@ -1002,7 +1002,7 @@ dependencies = [
  "limit-db",
  "limit-server-auth",
  "limit-server-auth-test",
- "limit-server-message-test",
+ "limit-server-event-test",
  "limit-test-utils",
  "once_cell",
  "serde",
@@ -1071,7 +1071,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "limit-server-message"
+name = "limit-server-event"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1098,6 +1098,34 @@ dependencies = [
  "uuid",
  "volo",
  "volo-gen",
+ "volo-grpc",
+]
+
+[[package]]
+name = "limit-server-event-test"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "crossbeam-channel",
+ "diesel",
+ "futures",
+ "jsonwebtoken",
+ "limit-am",
+ "limit-config",
+ "limit-db",
+ "limit-server-auth",
+ "limit-server-event",
+ "limit-test-utils",
+ "limit-utils",
+ "pilota",
+ "rand",
+ "serde",
+ "tokio",
+ "tracing",
+ "uuid",
+ "volo",
  "volo-grpc",
 ]
 
@@ -1129,34 +1157,6 @@ dependencies = [
  "uuid",
  "volo",
  "volo-gen",
- "volo-grpc",
-]
-
-[[package]]
-name = "limit-server-message-test"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "crossbeam-channel",
- "diesel",
- "futures",
- "jsonwebtoken",
- "limit-am",
- "limit-config",
- "limit-db",
- "limit-server-auth",
- "limit-server-message",
- "limit-test-utils",
- "limit-utils",
- "pilota",
- "rand",
- "serde",
- "tokio",
- "tracing",
- "uuid",
- "volo",
  "volo-grpc",
 ]
 

@@ -7,7 +7,7 @@ use limit_db::schema::{MESSAGE, MESSAGE_SUBSCRIPTIONS};
 use limit_db::{run_sql, RedisClient};
 use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
-pub use volo_gen::limit::message::*;
+pub use volo_gen::limit::event::{event::*, *};
 use volo_grpc::codegen::StreamExt;
 use volo_grpc::{BoxStream, Request, Response, Status};
 
@@ -15,37 +15,44 @@ use volo_grpc::{BoxStream, Request, Response, Status};
 // require db
 // require background worker
 // TODO: see if there is any message missing
-pub struct MessageService;
+pub struct EventService;
 
-fn message_to_dbmessage(m: Message) -> limit_db::message::Message {
+fn message_to_dbmessage(m: Event) -> limit_db::message::Message {
+    let msg = match m.detail {
+        Some(Detail::Message(ref m)) => m,
+        _ => panic!(),
+    };
+    // TODO
     limit_db::message::Message {
-        message_id: m.message_id,
+        message_id: m.event_id,
         timestamp: m.timestamp,
         sender: m.sender,
-        receiver_id: m.receiver_id,
-        receiver_server: m.receiver_server,
-        text: m.text,
-        extensions: serde_json::to_value(m.extensions).unwrap().to_string(),
+        receiver_id: msg.receiver_id.to_owned(),
+        receiver_server: msg.receiver_server.to_owned(),
+        text: msg.text.to_owned(),
+        extensions: serde_json::to_value(msg.extensions.to_owned()).unwrap().to_string(),
     }
 }
-fn dbmessage_to_message(m: limit_db::message::Message) -> Message {
-    Message {
-        message_id: m.message_id,
+fn dbmessage_to_message(m: limit_db::message::Message) -> Event {
+    Event {
+        event_id: m.message_id,
         timestamp: m.timestamp,
         sender: m.sender,
-        receiver_id: m.receiver_id,
-        receiver_server: m.receiver_server,
-        text: m.text,
-        extensions: serde_json::from_str(&m.extensions).unwrap(),
+        detail: Some(Detail::Message(Message {
+            receiver_id: m.receiver_id,
+            receiver_server: m.receiver_server,
+            text: m.text,
+            extensions: serde_json::from_str(&m.extensions).unwrap(),
+        })),
     }
 }
 
 #[volo::async_trait]
-impl volo_gen::limit::message::MessageService for MessageService {
-    async fn receive_messages(
+impl volo_gen::limit::event::EventService for EventService {
+    async fn receive_events(
         &self,
-        req: Request<ReceiveMessagesRequest>,
-    ) -> Result<Response<BoxStream<'static, Result<Message, Status>>>, Status> {
+        req: Request<ReceiveEventsRequest>,
+    ) -> Result<Response<BoxStream<'static, Result<Event, Status>>>, Status> {
         // check auth is valid
         let auth = req.get_ref().token.clone().ok_or_else(|| {
             tracing::error!("no auth token");
@@ -131,26 +138,31 @@ impl volo_gen::limit::message::MessageService for MessageService {
         Ok(Response::new(res))
     }
 
-    async fn send_message(
+    async fn send_event(
         &self,
-        req: Request<SendMessageRequest>,
-    ) -> Result<Response<SendMessageResponse>, Status> {
+        req: Request<SendEventRequest>,
+    ) -> Result<Response<SendEventResponse>, Status> {
         // check auth is valid
         let auth = req.get_ref().token.clone().ok_or_else(|| {
             tracing::error!("no auth token");
             Status::unauthenticated("no auth token")
         })?;
         let _claim = limit_server_auth::decode_jwt(&auth.jwt)?;
-        let message: Message = req.get_ref().message.clone().ok_or_else(|| {
+        let event = req.get_ref().event.clone().ok_or_else(|| {
             tracing::error!("message is empty");
             Status::cancelled("message is empty")
         })?;
         let current_server_url = GLOBAL_CONFIG.get().unwrap().url.as_str();
-        let message_id = uuid::Uuid::new_v4();
-        let mut message = message.clone();
-        message.message_id = message_id.to_string();
+        let mut message = event.clone();
+        message.event_id = uuid::Uuid::new_v4().to_string();
         let message2 = message.clone();
-        if &message.receiver_server == current_server_url {
+
+        let msg_detail = match event.detail {
+            Some(Detail::Message(ref msg)) => msg,
+            _ => return Err(Status::internal("no implementation"))
+        };
+
+        if &msg_detail.receiver_server == current_server_url {
             let mut redis = req
                 .extensions()
                 .get::<RedisClient>()
@@ -198,23 +210,26 @@ impl volo_gen::limit::message::MessageService for MessageService {
                     }
                 )
             };
+
+            let event_id = event.event_id.clone();
+
             execute_background_task(BackgroundTask {
                 name: "store_message".to_string(),
                 task: ReusableBoxFuture::new(async move {
                     // TODO: save message
                     match run_sql.await {
                         Ok(_) => {
-                            tracing::info!("message {:?} saved", message_id)
+                            tracing::info!("message {:?} saved", event.event_id);
                         }
                         Err(e) => {
-                            tracing::error!("unable to save message {:?} with {:?}", message_id, e)
+                            tracing::error!("unable to save message {:?} with {:?}", event.event_id, e)
                         }
                     }
                 }),
             })
             .await;
-            Ok(Response::new(SendMessageResponse {
-                message_id: message_id.to_string(),
+            Ok(Response::new(SendEventResponse {
+                event_id,
             }))
         } else {
             todo!("send to other server")

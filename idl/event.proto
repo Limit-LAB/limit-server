@@ -1,0 +1,56 @@
+syntax = "proto3";
+package limit.event;
+
+import "auth.proto";
+
+message Event {
+    // uuid of the event
+    // better uuid v7 for sql better performance
+    // could only be empty for sender
+    string event_id = 1;
+    // sent time of the event
+    int64 timestamp = 2;
+    // sender uuid of the event
+    string sender = 3;
+    // event data
+    oneof detail {
+        Message message = 4;
+    }
+}
+
+message Message {
+    // TODO: it should be subscription
+    // receiver uuid of the message
+    string receiver_id = 4;
+    // TODO: no need to specify receiver_server
+    string receiver_server = 5;
+    // text should be encrypted
+    // if using v1 or v2 version text could be empty
+    string text = 6;
+
+    map<string, string> extensions = 7;
+}
+
+message ReceiveEventsRequest {
+    // auth
+    limit.auth.Auth token = 1;
+}
+
+message SendEventRequest {
+    // auth
+    limit.auth.Auth token = 1;
+    // event
+    Event event = 2;
+}
+
+message SendEventResponse {
+    // event id
+    string event_id = 1;
+}
+
+service EventService {
+   // receiving all events from the server
+   rpc ReceiveEvents (ReceiveEventsRequest) returns (stream Event);
+   // sending event to the server
+   rpc SendEvent (SendEventRequest) returns (SendEventResponse);
+}

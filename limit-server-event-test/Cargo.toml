@@ -1,5 +1,5 @@
 [package]
-name = "limit-server-message-test"
+name = "limit-server-event-test"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 limit-server-auth = { path = "../limit-server-auth" }
-limit-server-message = { path = "../limit-server-message" }
+limit-server-event = { path = "../limit-server-event" }
 limit-test-utils = {path = "../limit-test-utils"}
 crossbeam-channel = "*"
 futures = "*"
