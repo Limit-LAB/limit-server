@@ -28,10 +28,10 @@ features = [
 ]
 
 [dependencies.uuid]
-version = "1.2.1"
+version = "1.2.2"
 features = [
     "v4",
-    # "v7",
+    "v7",
     "fast-rng",
     "macro-diagnostics",
     "serde",
