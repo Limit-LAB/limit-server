@@ -57,7 +57,7 @@ pub struct Message {
     pub receiver_server: String,
     /// text message
     #[diesel(column_name = "TEXT")]
-    pub text: String,
+    pub text: String, // TODO: encrypted text message
     /// extensions in string json
     #[diesel(column_name = "EXTENSIONS")]
     pub extensions: String,
