@@ -12,6 +12,6 @@ entries:
       includes:
       - ../idl
     - source: local
-      path: ../idl/event.sync.proto
+      path: ../idl/event.types.proto
       includes:
       - ../idl

@@ -7,9 +7,10 @@ use limit_db::schema::{MESSAGE, MESSAGE_SUBSCRIPTIONS};
 use limit_db::{run_sql, RedisClient};
 use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
-pub use volo_gen::limit::event::{event::*, *};
 use volo_grpc::codegen::StreamExt;
 use volo_grpc::{BoxStream, Request, Response, Status};
+
+pub use volo_gen::limit::event::{event::*, synchronize_request::*, types::*, *};
 
 #[derive(Debug, Clone)]
 // require db
@@ -30,7 +31,9 @@ fn message_to_dbmessage(m: Event) -> limit_db::message::Message {
         receiver_id: msg.receiver_id.to_owned(),
         receiver_server: msg.receiver_server.to_owned(),
         text: msg.text.to_owned(),
-        extensions: serde_json::to_value(msg.extensions.to_owned()).unwrap().to_string(),
+        extensions: serde_json::to_value(msg.extensions.to_owned())
+            .unwrap()
+            .to_string(),
     }
 }
 fn dbmessage_to_message(m: limit_db::message::Message) -> Event {
@@ -159,7 +162,7 @@ impl volo_gen::limit::event::EventService for EventService {
 
         let msg_detail = match event.detail {
             Some(Detail::Message(ref msg)) => msg,
-            _ => return Err(Status::internal("no implementation"))
+            _ => return Err(Status::internal("no implementation")),
         };
 
         if &msg_detail.receiver_server == current_server_url {
@@ -222,17 +225,49 @@ impl volo_gen::limit::event::EventService for EventService {
                             tracing::info!("message {:?} saved", event.event_id);
                         }
                         Err(e) => {
-                            tracing::error!("unable to save message {:?} with {:?}", event.event_id, e)
+                            tracing::error!(
+                                "unable to save message {:?} with {:?}",
+                                event.event_id,
+                                e
+                            )
                         }
                     }
                 }),
             })
             .await;
-            Ok(Response::new(SendEventResponse {
-                event_id,
-            }))
+            Ok(Response::new(SendEventResponse { event_id }))
         } else {
             todo!("send to other server")
         }
+    }
+
+    async fn synchronize(
+        &self,
+        req: Request<SynchronizeRequest>,
+    ) -> Result<Response<SynchronizeResponse>, Status> {
+        let sync_req = req.get_ref();
+
+        // check auth is valid
+        let auth = sync_req.token.as_ref().ok_or_else(|| {
+            tracing::error!("no auth token");
+            Status::unauthenticated("no auth token")
+        })?;
+
+        let claim = limit_server_auth::decode_jwt(&auth.jwt)?;
+        let ids = claim.sub.split("/").collect::<Vec<_>>();
+        let id = ids[1];
+        let starting_point = sync_req
+            .starting_point
+            .as_ref()
+            .unwrap_or(&StartingPoint::Timestamp(chrono::Utc::now().timestamp()));
+        let offset = match sync_req.offset {
+            0 => 50, // default value of offset
+            _ => sync_req.offset,
+        };
+
+        let subscription = &sync_req.subscription;
+        let filter = sync_req.filter;
+
+        Err(Status::internal("no implementation"))
     }
 }

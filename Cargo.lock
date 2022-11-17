@@ -1130,37 +1130,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "limit-server-message-sync"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-channel",
- "async-trait",
- "chrono",
- "dashmap",
- "diesel",
- "futures",
- "jsonwebtoken",
- "limit-am",
- "limit-config",
- "limit-db",
- "limit-server-auth",
- "limit-utils",
- "pilota",
- "rand",
- "redis",
- "serde",
- "serde_json",
- "tokio",
- "tokio-util",
- "tracing",
- "uuid",
- "volo",
- "volo-gen",
- "volo-grpc",
-]
-
-[[package]]
 name = "limit-test-utils"
 version = "0.1.0"
 dependencies = [

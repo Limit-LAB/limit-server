@@ -40,7 +40,6 @@ members = [
     "limit-server-auth-test",
 
     "limit-server-event",
-    "limit-server-event-sync",
     "limit-server-event-test",
 
     "limit-db",
