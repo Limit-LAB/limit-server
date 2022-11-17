@@ -5,7 +5,7 @@ use motore::Service;
 use r2d2::Pool;
 use volo_grpc::Request;
 
-pub mod message;
+pub mod event;
 pub mod orm;
 pub mod schema;
 pub mod user;

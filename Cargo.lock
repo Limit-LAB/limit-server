@@ -1011,7 +1011,7 @@ dependencies = [
  "limit-db",
  "limit-server-auth",
  "limit-server-auth-test",
- "limit-server-message-test",
+ "limit-server-event-test",
  "limit-test-utils",
  "once_cell",
  "serde",
@@ -1080,7 +1080,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "limit-server-message"
+name = "limit-server-event"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1111,7 +1111,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "limit-server-message-test"
+name = "limit-server-event-test"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1125,7 +1125,7 @@ dependencies = [
  "limit-config",
  "limit-db",
  "limit-server-auth",
- "limit-server-message",
+ "limit-server-event",
  "limit-test-utils",
  "limit-utils",
  "pilota",
