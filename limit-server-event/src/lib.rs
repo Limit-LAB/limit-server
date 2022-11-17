@@ -3,7 +3,7 @@
 use anyhow::Context;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use limit_config::GLOBAL_CONFIG;
-use limit_db::schema::{MESSAGE, MESSAGE_SUBSCRIPTIONS};
+use limit_db::schema::{EVENT, EVENT_SUBSCRIPTIONS, MESSAGE};
 use limit_db::{run_sql, RedisClient};
 use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
@@ -18,35 +18,51 @@ pub use volo_gen::limit::event::{event::*, synchronize_request::*, types::*, *};
 // TODO: see if there is any message missing
 pub struct EventService;
 
-fn message_to_dbmessage(m: Event) -> limit_db::message::Message {
+fn message_to_dbmessage(m: Event) -> limit_db::event::SREvent {
     let msg = match m.detail {
         Some(Detail::Message(ref m)) => m,
         _ => panic!(),
     };
-    // TODO
-    limit_db::message::Message {
-        message_id: m.event_id,
-        timestamp: m.timestamp,
-        sender: m.sender,
-        receiver_id: msg.receiver_id.to_owned(),
-        receiver_server: msg.receiver_server.to_owned(),
-        text: msg.text.to_owned(),
-        extensions: serde_json::to_value(msg.extensions.to_owned())
-            .unwrap()
-            .to_string(),
-    }
+    (
+        limit_db::event::Event {
+            message_id: m.event_id.clone(),
+            timestamp: m.timestamp,
+            sender: m.sender,
+            event_type: "message".to_string(),
+        },
+        limit_db::event::Message {
+            event_id: m.event_id,
+            receiver_id: msg.receiver_id.to_owned(),
+            receiver_server: msg.receiver_server.to_owned(),
+            text: msg.text.to_owned(),
+            extensions: serde_json::to_value(msg.extensions.to_owned())
+                .unwrap()
+                .to_string(),
+        },
+    )
+        .into()
 }
-fn dbmessage_to_message(m: limit_db::message::Message) -> Event {
-    Event {
-        event_id: m.message_id,
-        timestamp: m.timestamp,
-        sender: m.sender,
-        detail: Some(Detail::Message(Message {
-            receiver_id: m.receiver_id,
-            receiver_server: m.receiver_server,
-            text: m.text,
-            extensions: serde_json::from_str(&m.extensions).unwrap(),
-        })),
+fn dbmessage_to_message(m: limit_db::event::SREvent) -> Result<Event, Status> {
+    match m.head.event_type.as_str() {
+        "message" => {
+            if let limit_db::event::SREventBody::Message(body) = m.body {
+                Ok(Event {
+                    event_id: m.head.message_id,
+                    timestamp: m.head.timestamp,
+                    sender: m.head.sender,
+                    r#type: 1,
+                    detail: Some(Detail::Message(Message {
+                        receiver_id: body.receiver_id,
+                        receiver_server: body.receiver_server,
+                        text: body.text,
+                        extensions: serde_json::from_str(&body.extensions).unwrap(),
+                    })),
+                })
+            } else {
+                Err(Status::internal("event type not match"))
+            }
+        }
+        _ => Err(Status::internal("event type not supported")),
     }
 }
 
@@ -99,7 +115,7 @@ impl volo_gen::limit::event::EventService for EventService {
             })?;
         let subscriptions = if subscriptions.is_none() {
             tracing::info!("🈚 receive message cache miss");
-            let sql = MESSAGE_SUBSCRIPTIONS::table.filter(MESSAGE_SUBSCRIPTIONS::USER_ID.eq(id));
+            let sql = EVENT_SUBSCRIPTIONS::table.filter(EVENT_SUBSCRIPTIONS::USER_ID.eq(id));
             let subs = run_sql!(
                 pool,
                 |mut conn| {
@@ -136,7 +152,7 @@ impl volo_gen::limit::event::EventService for EventService {
                         tracing::error!("{}", e);
                         Status::internal(e.to_string())
                     })?,
-            ))
+            )?)
         }));
         Ok(Response::new(res))
     }
@@ -182,60 +198,108 @@ impl volo_gen::limit::event::EventService for EventService {
                 })?;
 
             let message = message_to_dbmessage(message2);
-            redis::cmd("PUBLISH")
-                .arg(format!("message:{}", message.receiver_id))
-                .arg(serde_json::to_string(&message).unwrap())
-                .execute(&mut redis);
+            match message.head.event_type.as_str() {
+                "message" => {
+                    if let limit_db::event::SREventBody::Message(body) = &message.body {
+                        redis::cmd("PUBLISH")
+                            .arg(format!("message:{}", body.receiver_id))
+                            .arg(serde_json::to_string(&message).unwrap())
+                            .execute(&mut redis);
 
-            // store message
-            let pool = req
-                .extensions()
-                .get::<limit_db::DBPool>()
-                .context("no db extended to service")
-                .map_err(|e| {
-                    tracing::error!("{}", e);
-                    Status::internal(e.to_string())
-                })?
-                .clone();
-            let sql = diesel::insert_into(MESSAGE::table).values(message);
-            let run_sql = async move {
-                run_sql!(
-                    pool,
-                    |mut conn| {
-                        sql.execute(&mut conn).map_err(|e| {
-                            tracing::error!("{}", e);
-                            Status::internal(e.to_string())
-                        })
-                    },
-                    |e| {
-                        tracing::error!("{}", e);
-                        Status::internal(e.to_string())
-                    }
-                )
-            };
-
-            let event_id = event.event_id.clone();
-
-            execute_background_task(BackgroundTask {
-                name: "store_message".to_string(),
-                task: ReusableBoxFuture::new(async move {
-                    // TODO: save message
-                    match run_sql.await {
-                        Ok(_) => {
-                            tracing::info!("message {:?} saved", event.event_id);
-                        }
-                        Err(e) => {
-                            tracing::error!(
-                                "unable to save message {:?} with {:?}",
-                                event.event_id,
-                                e
+                        // store message
+                        let pool = req
+                            .extensions()
+                            .get::<limit_db::DBPool>()
+                            .context("no db extended to service")
+                            .map_err(|e| {
+                                tracing::error!("{}", e);
+                                Status::internal(e.to_string())
+                            })?
+                            .clone();
+                        let insert_event_sql =
+                            diesel::insert_into(EVENT::table).values(message.head);
+                        let insert_message_sql =
+                            diesel::insert_into(MESSAGE::table).values(body.clone());
+                        let pool2 = pool.clone();
+                        let run_sql = async move {
+                            run_sql!(
+                                pool,
+                                |mut conn| {
+                                    insert_event_sql.execute(&mut conn).map_err(|e| {
+                                        tracing::error!("{}", e);
+                                        Status::internal(e.to_string())
+                                    })
+                                },
+                                |e| {
+                                    tracing::error!("{}", e);
+                                    Status::internal(e.to_string())
+                                }
                             )
-                        }
+                        };
+                        let event_id = event.event_id.clone();
+                        let event_id2 = event.event_id.clone();
+                        let event_id3 = event.event_id.clone();
+                        execute_background_task(BackgroundTask {
+                            name: "store_event".to_string(),
+                            task: ReusableBoxFuture::new(async move {
+                                match run_sql.await {
+                                    Ok(_) => {
+                                        tracing::info!("event {:?} saved", event_id);
+                                    }
+                                    Err(e) => {
+                                        tracing::error!(
+                                            "unable to save event {:?} with {:?}",
+                                            event_id,
+                                            e
+                                        )
+                                    }
+                                }
+                            }),
+                        })
+                        .await;
+                        let run_sql = async move {
+                            run_sql!(
+                                pool2,
+                                |mut conn| {
+                                    insert_message_sql.execute(&mut conn).map_err(|e| {
+                                        tracing::error!("{}", e);
+                                        Status::internal(e.to_string())
+                                    })
+                                },
+                                |e| {
+                                    tracing::error!("{}", e);
+                                    Status::internal(e.to_string())
+                                }
+                            )
+                        };
+                        execute_background_task(BackgroundTask {
+                            name: "store_message".to_string(),
+                            task: ReusableBoxFuture::new(async move {
+                                // TODO: save message
+                                match run_sql.await {
+                                    Ok(_) => {
+                                        tracing::info!("message {:?} saved", event_id2);
+                                    }
+                                    Err(e) => {
+                                        tracing::error!(
+                                            "unable to save message {:?} with {:?}",
+                                            event_id2,
+                                            e
+                                        )
+                                    }
+                                }
+                            }),
+                        })
+                        .await;
+                        Ok(Response::new(SendEventResponse {
+                            event_id: event_id3,
+                        }))
+                    } else {
+                        Err(Status::internal("message type mismatched"))
                     }
-                }),
-            })
-            .await;
-            Ok(Response::new(SendEventResponse { event_id }))
+                }
+                _ => Err(Status::internal("message type not supported")),
+            }
         } else {
             todo!("send to other server")
         }
@@ -266,7 +330,7 @@ impl volo_gen::limit::event::EventService for EventService {
         };
 
         let subscription = &sync_req.subscription;
-        let filter = sync_req.filter;
+        let filter = sync_req.filter_flags;
 
         Err(Status::internal("no implementation"))
     }

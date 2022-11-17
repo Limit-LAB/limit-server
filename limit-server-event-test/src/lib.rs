@@ -4,9 +4,9 @@ use std::{future::Future, net::SocketAddr, pin::Pin};
 
 use futures::StreamExt;
 use limit_db::{
-    message::MessageSubscriptions,
+    event::EventSubscriptions,
     run_sql,
-    schema::{MESSAGE_SUBSCRIPTIONS, USER, USER_LOGIN_PASSCODE, USER_PRIVACY_SETTINGS},
+    schema::{EVENT_SUBSCRIPTIONS, USER, USER_LOGIN_PASSCODE, USER_PRIVACY_SETTINGS},
     DBLayer, DBPool,
 };
 use limit_server_auth::{AuthService, AuthServiceClientBuilder, AuthServiceServer, DoAuthRequest};
@@ -173,10 +173,10 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
                 );
                 run_sql!(
                     pool,
-                    |mut con| diesel::insert_into(MESSAGE_SUBSCRIPTIONS::table)
-                        .values(MessageSubscriptions {
+                    |mut con| diesel::insert_into(EVENT_SUBSCRIPTIONS::table)
+                        .values(EventSubscriptions {
                             user_id: id.clone(),
-                            subscribed_to: format!("message:{}", id.clone())
+                            sub_to: format!("message:{}", id.clone())
                         })
                         .execute(&mut con)
                         .unwrap(),
@@ -230,6 +230,7 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
                     event_id: "".to_string(),
                     timestamp: 0,
                     sender: id1.clone(),
+                    r#type: 1,
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2,
                         receiver_server: GLOBAL_CONFIG.get().unwrap().url.clone(),
@@ -256,7 +257,7 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
             Detail::Message(ref m) => &m.text,
             _ => unreachable!(),
         };
-        
+
         assert_eq!(received, "hello");
     })
     .await

@@ -13,10 +13,21 @@ message Event {
     int64 timestamp = 2;
     // sender uuid of the event
     string sender = 3;
+    // type of the event
+    limit.event.types.Types type = 4;
     // event data
     oneof detail {
-        limit.event.types.Message message = 4;
+        limit.event.types.Message message = 5;
     }
+}
+
+service EventService {
+    // receiving all events from the server
+    rpc ReceiveEvents (ReceiveEventsRequest) returns (stream Event);
+    // sending event to the server
+    rpc SendEvent (SendEventRequest) returns (SendEventResponse);
+    // synchronize from server
+    rpc Synchronize(SynchronizeRequest) returns (SynchronizeResponse);
 }
 
 message ReceiveEventsRequest {
@@ -49,21 +60,12 @@ message SynchronizeRequest {
         string event_id = 4;
     }
     // offset for synchronization
-    // the default is +50 (49 events backwards from the starting point)
+    // the default is +50 (49 events before from the starting point)
     sint32 offset = 5;
     // returns all type of events if not specified
-    limit.event.types.Types filter = 6;
+    int32 filter_flags = 6;
 }
 
 message SynchronizeResponse {
     repeated limit.event.Event events = 1;
-}
-
-service EventService {
-    // receiving all events from the server
-    rpc ReceiveEvents (ReceiveEventsRequest) returns (stream Event);
-    // sending event to the server
-    rpc SendEvent (SendEventRequest) returns (SendEventResponse);
-    // synchronize from server
-    rpc Synchronize(SynchronizeRequest) returns (SynchronizeResponse);
 }

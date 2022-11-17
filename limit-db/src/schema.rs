@@ -1,21 +1,28 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    MESSAGE (ID) {
+    EVENT (ID) {
         ID -> Text,
         TS -> BigInt,
         SENDER -> Text,
-        RECEIVER_ID -> Text,
-        RECEIVER_SERVER -> Text,
-        TEXT -> Text,
-        EXTENSIONS -> Text,
+        EVENT_TYPE -> Text,
     }
 }
 
 diesel::table! {
-    MESSAGE_SUBSCRIPTIONS (USER_ID) {
+    EVENT_SUBSCRIPTIONS (USER_ID) {
         USER_ID -> Text,
         SUBSCRIBED_TO -> Text,
+    }
+}
+
+diesel::table! {
+    MESSAGE (EVENT_ID) {
+        EVENT_ID -> Text,
+        RECEIVER_ID -> Text,
+        RECEIVER_SERVER -> Text,
+        TEXT -> Text,
+        EXTENSIONS -> Text,
     }
 }
 
@@ -57,13 +64,15 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(MESSAGE -> EVENT (EVENT_ID));
 diesel::joinable!(USER_LOGIN_PASSCODE -> USER (ID));
 diesel::joinable!(USER_PRIVACY_SETTINGS -> USER (ID));
 diesel::joinable!(USER_PROFILE -> USER (ID));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    EVENT,
+    EVENT_SUBSCRIPTIONS,
     MESSAGE,
-    MESSAGE_SUBSCRIPTIONS,
     USER,
     USER_LOGIN_PASSCODE,
     USER_PRIVACY_SETTINGS,

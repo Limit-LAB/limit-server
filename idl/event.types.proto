@@ -2,7 +2,6 @@ syntax = "proto3";
 package limit.event.types;
 
 enum Types {
-    ALL = 0;
     MESSAGE = 1;
 }
 
