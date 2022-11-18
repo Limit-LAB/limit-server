@@ -1139,6 +1139,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "limit-server-subs"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64",
+ "chrono",
+ "crossbeam-channel",
+ "diesel",
+ "futures",
+ "jsonwebtoken",
+ "limit-am",
+ "limit-config",
+ "limit-db",
+ "limit-server-auth",
+ "limit-test-utils",
+ "limit-utils",
+ "pilota",
+ "rand",
+ "redis",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "uuid",
+ "volo",
+ "volo-gen",
+ "volo-grpc",
+]
+
+[[package]]
 name = "limit-test-utils"
 version = "0.1.0"
 dependencies = [

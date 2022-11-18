@@ -1,0 +1,31 @@
+syntax = "proto3";
+package limit.subs;
+
+import "auth.proto";
+import "subs.types.proto";
+
+message SubscribableObject {
+    // subscribable object id
+    string id = 1;
+    // public key
+    string pubkey = 6;
+}
+
+message GetObjectsRequest {
+    limit.auth.Auth token = 1;
+    // target subscribable object ids
+    repeated string ids = 2;
+}
+
+message GetSubscribableObjectsResponse {
+    repeated SubscribableObject objects = 1;
+}
+
+message GetProfilesResponse {
+    repeated limit.subs.types.Profile profiles = 1;
+}
+
+service SubsService {
+    rpc GetSubscribableObjects(GetObjectsRequest) returns (GetSubscribableObjectsResponse);
+    rpc GetProfiles(GetObjectsRequest) returns (GetProfilesResponse);
+}

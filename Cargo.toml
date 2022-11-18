@@ -42,6 +42,8 @@ members = [
     "limit-server-event",
     "limit-server-event-test",
 
+    "limit-server-subs",
+
     "limit-db",
     "limit-config",
     "limit-test-utils",
