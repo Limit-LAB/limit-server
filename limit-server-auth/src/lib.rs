@@ -4,7 +4,7 @@
 use jsonwebtoken::Algorithm;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Validation;
-use limit_db::RedisClient;
+use limit_db::get_db_layer;
 use limit_utils::execute_background_task;
 use limit_utils::BackgroundTask;
 use tokio_util::sync::ReusableBoxFuture;
@@ -124,40 +124,25 @@ impl volo_gen::limit::auth::AuthService for AuthService {
         req: Request<RequestAuthRequest>,
     ) -> Result<Response<RequestAuthResponse>, Status> {
         tracing::info!("request_auth: {:?}", req.get_ref().id);
-        let pool = req
-            .extensions()
-            .get::<limit_db::DBPool>()
-            .context("no db extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone();
-        let mut redis = req
-            .extensions()
-            .get::<RedisClient>()
-            .context("no redis extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone()
-            .get_connection()
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?;
+        let (_, redis, pool) = get_db_layer!(req);
+        
         let id = req.get_ref().id.clone();
-        let _id_guard = uuid::Uuid::parse_str(&id).map_err(|e| {
+        let _id_guard = id.parse::<Uuid>().map_err(|e| {
             tracing::error!("{}", e);
             Status::invalid_argument(e.to_string())
         })?;
+
         let passcode = generate_random_passcode();
+
         // update random passcode for user
         let _update_cache = redis::cmd("SET")
             .arg(format!("{}:passcode", id))
             .arg(&passcode)
-            .execute(&mut redis);
+            .execute(&mut redis.get_connection().map_err(|e| {
+                tracing::error!("{}", e);
+                Status::internal(e.to_string())
+            })?);
+
         let sql = diesel::update(USER_LOGIN_PASSCODE::table)
             .filter(USER_LOGIN_PASSCODE::ID.eq(id))
             .set(USER_LOGIN_PASSCODE::PASSCODE.eq(passcode.clone()));
@@ -176,6 +161,7 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                 }
             )
         };
+
         execute_background_task(BackgroundTask {
             name: "request_auth_update_user_passcode_db".to_string(),
             task: ReusableBoxFuture::new(async move {
@@ -202,29 +188,7 @@ impl volo_gen::limit::auth::AuthService for AuthService {
             req.get_ref().id,
             req.get_ref().device_id
         );
-        let pool = req
-            .extensions()
-            .get::<limit_db::DBPool>()
-            .context("no db extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone();
-        let mut redis = req
-            .extensions()
-            .get::<RedisClient>()
-            .context("no redis extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone()
-            .get_connection()
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?;
+        let (_, mut redis, pool) = get_db_layer!(req);
         let id = req.get_ref().id.clone();
         let uuid = uuid::Uuid::parse_str(&id).map_err(|e| {
             tracing::error!("{}", e);

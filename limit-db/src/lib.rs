@@ -5,9 +5,10 @@ use motore::Service;
 use r2d2::Pool;
 use volo_grpc::Request;
 
-pub mod event;
 pub mod orm;
+pub mod event;
 pub mod schema;
+pub mod macros;
 pub mod user;
 
 pub type RedisClient = redis::Client;
