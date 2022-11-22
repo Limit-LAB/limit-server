@@ -3,37 +3,12 @@
 use limit_deps::*;
 
 use anyhow::Context;
+use limit_db::get_db_layer;
 use volo_grpc::{Request, Response, Status};
 
 pub use volo_gen::limit::subs::{self, *};
 
 pub struct SubsService;
-
-macro_rules! redis {
-    ($req:ident) => {
-        $req.extensions()
-            .get::<limit_db::RedisClient>()
-            .context("no redis extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone()
-    };
-}
-
-macro_rules! dbpool {
-    ($req:ident) => {
-        $req.extensions()
-            .get::<limit_db::DBPool>()
-            .context("no db extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone()
-    };
-}
 
 #[volo::async_trait]
 impl subs::SubsService for SubsService {
@@ -49,9 +24,7 @@ impl subs::SubsService for SubsService {
         })?;
         let _claim = limit_server_auth::decode_jwt(&auth.jwt)?;
 
-        let redis = redis!(req);
-
-        let pool = dbpool!(req);
+        let (_, _, _) = get_db_layer!(req);
 
         Err(Status::internal("no implementation"))
     }
@@ -68,9 +41,7 @@ impl subs::SubsService for SubsService {
         })?;
         let _claim = limit_server_auth::decode_jwt(&auth.jwt)?;
 
-        let redis = redis!(req);
-
-        let pool = dbpool!(req);
+        let (_, _, _) = get_db_layer!(req);
 
         Err(Status::internal("no implementation"))
     }
