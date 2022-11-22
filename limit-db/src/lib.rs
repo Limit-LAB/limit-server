@@ -1,14 +1,16 @@
 #![feature(type_alias_impl_trait)]
 
+use limit_deps::*;
+
 use diesel::{r2d2::ConnectionManager, SqliteConnection};
 use motore::Service;
 use r2d2::Pool;
 use volo_grpc::Request;
 
-pub mod orm;
 pub mod event;
-pub mod schema;
 pub mod macros;
+pub mod orm;
+pub mod schema;
 pub mod user;
 
 pub type RedisClient = redis::Client;

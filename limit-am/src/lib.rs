@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use limit_deps::*;
+
 use aes::{
     cipher::{BlockDecrypt, BlockEncrypt, KeyInit},
     Aes256,

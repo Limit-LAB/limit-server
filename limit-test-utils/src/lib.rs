@@ -1,3 +1,5 @@
+use limit_deps::*;
+
 use crossbeam_channel::{Receiver, Sender};
 use once_cell::sync::Lazy;
 

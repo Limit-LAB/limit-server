@@ -1,8 +1,11 @@
+use limit_deps::*;
+
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 pub static GLOBAL_CONFIG: OnceCell<Config> = OnceCell::new();
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(crate = "limit_deps::serde")]
 pub enum Database {
     Sqlite { path: String },
     Postgres { url: String },
@@ -11,6 +14,7 @@ pub enum Database {
 
 /// Deploy mode of the server
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(crate = "limit_deps::serde")]
 pub enum DeployMode {
     /// standalone mode
     StandAlone { ip: String },
@@ -21,6 +25,7 @@ pub enum DeployMode {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(crate = "limit_deps::serde")]
 pub enum Metrics {
     /// prometheus metrics
     Prometheus { url: String },
@@ -31,6 +36,7 @@ pub enum Metrics {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(crate = "limit_deps::serde")]
 pub struct Config {
     /// server url
     pub url: String,

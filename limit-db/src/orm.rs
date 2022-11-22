@@ -1,3 +1,5 @@
+use limit_deps::*;
+
 use std::str::FromStr;
 
 use diesel::{

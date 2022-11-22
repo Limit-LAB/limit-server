@@ -1,3 +1,5 @@
+use limit_deps::*;
+
 use crate::schema::*;
 
 use diesel::prelude::*;
@@ -7,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// A user
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[serde(crate = "limit_deps::serde")]
 #[diesel(table_name = USER)]
 pub struct User {
     /// should be unique
@@ -24,6 +27,7 @@ pub struct User {
 
 /// A user's profile
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[serde(crate = "limit_deps::serde")]
 #[diesel(table_name = USER_PROFILE)]
 pub struct Profile {
     /// foreign key to [`User`]
@@ -60,6 +64,7 @@ pub struct Profile {
 
 /// user login passcode
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[serde(crate = "limit_deps::serde")]
 #[diesel(table_name = USER_LOGIN_PASSCODE)]
 pub struct UserLoginPasscode {
     /// foreign key to [`User`]
@@ -73,6 +78,7 @@ pub struct UserLoginPasscode {
 
 /// A user's private settings
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[serde(crate = "limit_deps::serde")]
 #[diesel(table_name = USER_PRIVACY_SETTINGS)]
 pub struct PrivacySettings {
     /// foreign key to [`User`]
@@ -103,6 +109,7 @@ pub struct PrivacySettings {
 
 /// The visibility of a field
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(crate = "limit_deps::serde")]
 pub enum Visibility {
     Public,
     FriendsOnly,

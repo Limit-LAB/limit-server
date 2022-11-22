@@ -1,6 +1,8 @@
 #![feature(type_alias_impl_trait)]
 #![feature(string_remove_matches)]
 
+use limit_deps::*;
+
 use jsonwebtoken::Algorithm;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Validation;
@@ -37,6 +39,7 @@ impl JWTSub {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(crate = "limit_deps::serde")]
 pub struct JWTClaim {
     // device_id/uuid
     pub sub: String,

@@ -1,5 +1,7 @@
 use std::{future::Future, net::SocketAddr, pin::Pin};
 
+use limit_deps::*;
+
 use diesel::RunQueryDsl;
 use limit_config::GLOBAL_CONFIG;
 use limit_db::{run_sql, schema::*, DBLayer, DBPool};

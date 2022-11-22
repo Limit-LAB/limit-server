@@ -1,3 +1,5 @@
+use limit_deps::*;
+
 use limit_test_utils::mock_config;
 
 macro_rules! tokio_run {

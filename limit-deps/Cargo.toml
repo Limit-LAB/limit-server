@@ -1,0 +1,69 @@
+[package]
+name = "limit-deps"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# encryption
+aes = "0.8"
+jsonwebtoken = "8.1"
+p256 = { version = "0.11", features = ["pem", "ecdh"] }
+elliptic-curve = { version = "0.12", features = ["pem", "ecdh"] }
+
+# serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# utils
+rand = "0.8"
+toml = "0.5"
+base64 = "0.13"
+once_cell = "1.16"
+chrono = { version = "0.4", features = ["serde"] }
+
+# logging
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# I/O & async
+tokio-util = "0.7"
+async-trait = "0.1"
+futures = "0.3"
+crossbeam-channel = "0.5"
+tokio = { version = "1", features = ["full"] }
+
+# rpc
+volo = "0.2"
+volo-grpc = "0.2"
+
+# middlewares
+motore = "0.2"
+
+# database
+r2d2 = "0.8"
+r2d2_sqlite = "0.21"
+
+[dependencies.redis]
+version = "0.22"
+features = [
+    "aio",
+    "cluster",
+    "r2d2",
+    "tokio-comp"
+]
+
+[dependencies.diesel]
+version = "2.0"
+features = ["sqlite", "uuid", "chrono", "r2d2"]
+
+# utils
+[dependencies.uuid]
+version = "1.2"
+features = [
+    "v4",
+    "v7",
+    "fast-rng",
+    "macro-diagnostics",
+    "serde",
+]

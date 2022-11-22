@@ -1,5 +1,7 @@
 #![feature(type_alias_impl_trait)]
 
+use limit_deps::*;
+
 use anyhow::Context;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use limit_config::GLOBAL_CONFIG;

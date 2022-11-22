@@ -3,43 +3,12 @@ name = "limit-server-event-test"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 limit-server-auth = { path = "../limit-server-auth" }
 limit-server-event = { path = "../limit-server-event" }
-limit-test-utils = {path = "../limit-test-utils"}
-crossbeam-channel = "*"
-futures = "*"
-anyhow = "1"
-async-trait = "0.1"
-tokio = { version = "1", features = ["full"] }
-chrono = { version = "0.4", features = ["serde"] }
-jsonwebtoken = "8.1"
-serde = { version = "1.0", features = ["derive"] }
-
-pilota = "*"      # we recommend to use the latest framework version for new features and bug fixes
-volo = "*"        # we recommend to use the latest framework version for new features and bug fixes
-volo-grpc = "*"   # we recommend to use the latest framework version for new features and bug fixes
-rand = "*"
-tracing = "0.1"
-
+limit-test-utils = { path = "../limit-test-utils" }
+limit-deps = { path = "../limit-deps" }
 limit-db = { path = "../limit-db" }
 limit-am = { path = "../limit-am" }
-limit-config = {path = "../limit-config"}
+limit-config = { path = "../limit-config" }
 limit-utils = { path = "../limit-utils" }
-
-[dependencies.diesel]
-version = "2.0.0"
-features = ["sqlite", "uuid", "chrono", "r2d2"]
-
-[dependencies.uuid]
-version = "1.2.2"
-features = [
-    "v4",
-    "v7",
-    "fast-rng",
-    "macro-diagnostics",
-    "serde",
-]
-

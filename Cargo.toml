@@ -4,38 +4,40 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-jsonwebtoken = "8.1"
-serde = { version = "1.0", features = ["derive"] }
-chrono = { version = "0.4", features = ["serde"] }
-once_cell = "*"
-tracing = "0.1"
-tracing-subscriber = "0.3"
-tokio = "1"
+# jsonwebtoken = "8.1"
+# serde = { version = "1.0", features = ["derive"] }
+# chrono = { version = "0.4", features = ["serde"] }
+# once_cell = "*"
+# tracing = "0.1"
+# tracing-subscriber = "0.3"
+# tokio = "1"
 
-limit-am = { path = "./limit-am" }
-limit-server-auth = { path = "./limit-server-auth" }
-limit-db = {path = "./limit-db"}
-limit-config = {path = "./limit-config"}
+# limit-am = { path = "./limit-am" }
+# limit-server-auth = { path = "./limit-server-auth" }
+# limit-db = {path = "./limit-db"}
+# limit-config = {path = "./limit-config"}
 
-[dependencies.uuid]
-version = "1.2.2"
-features = [
-    "v4",
-    "v7",
-    "fast-rng",
-    "macro-diagnostics",
-    "serde",
-]
+# [dependencies.uuid]
+# version = "1.2.2"
+# features = [
+#     "v4",
+#     "v7",
+#     "fast-rng",
+#     "macro-diagnostics",
+#     "serde",
+# ]
+
+limit-deps = { path = "./limit-deps" }
 
 [dev-dependencies]
 limit-server-auth-test = { path = "./limit-server-auth-test" }
 limit-server-event-test = { path = "./limit-server-event-test" }
 limit-test-utils = { path = "./limit-test-utils" }
-tokio-util = "*"
-futures = "*"
 
 [workspace]
 members = [
+    "limit-deps",
+
     "limit-server-auth",
     "limit-server-auth-test",
 

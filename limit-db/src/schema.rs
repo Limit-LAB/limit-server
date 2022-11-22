@@ -1,3 +1,4 @@
+use limit_deps::*;
 // @generated automatically by Diesel CLI.
 
 diesel::table! {

@@ -1,4 +1,7 @@
 #![feature(type_alias_impl_trait)]
+
+use limit_deps::*;
+
 use once_cell::sync::Lazy;
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::ReusableBoxFuture;

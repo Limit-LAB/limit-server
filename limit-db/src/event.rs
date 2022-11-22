@@ -1,15 +1,19 @@
+use limit_deps::*;
+
 use crate::schema::*;
 use diesel::{Insertable, Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 
 /// A event for sending and receiving
 #[derive(Serialize, Deserialize)]
+#[serde(crate = "limit_deps::serde")]
 pub struct SREvent {
     pub head: Event,
     pub body: SREventBody,
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(crate = "limit_deps::serde")]
 pub enum SREventBody {
     Message(Message),
 }
@@ -25,6 +29,7 @@ impl From<(Event, Message)> for SREvent {
 
 /// A event
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[serde(crate = "limit_deps::serde")]
 #[diesel(table_name = EVENT)]
 pub struct Event {
     /// should be unique
@@ -44,6 +49,7 @@ pub struct Event {
 
 /// A message
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[serde(crate = "limit_deps::serde")]
 #[diesel(table_name = MESSAGE)]
 pub struct Message {
     /// should be unique
@@ -65,6 +71,7 @@ pub struct Message {
 
 /// user subscribe to message queue
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
+#[serde(crate = "limit_deps::serde")]
 #[diesel(table_name = EVENT_SUBSCRIPTIONS)]
 pub struct EventSubscriptions {
     #[diesel(column_name = "USER_ID")]

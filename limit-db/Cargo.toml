@@ -4,41 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-r2d2 = "*"
-r2d2_sqlite = "*"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "*"
-anyhow = "*"
-chrono = { version = "0.4", features = ["serde"] }
 limit-config = { path = "../limit-config" }
-once_cell = "*"
-
-motore = "*"
-volo = "*"        # we recommend to use the latest framework version for new features and bug fixes
-volo-grpc = "*"   # we recommend to use the latest framework version for new features and bug fixes
-
-
-[dependencies.redis]
-version = "*"
-features = [
-    "aio",
-    "cluster",
-    "r2d2",
-    "tokio-comp"
-]
-
-[dependencies.uuid]
-version = "1.2.2"
-features = [
-    "v4",
-    "v7",
-    "fast-rng",
-    "macro-diagnostics",
-    "serde",
-]
-
-[dependencies.diesel]
-version = "2.0.0"
-features = ["sqlite", "uuid", "chrono", "r2d2"]
-
-
+limit-deps = { path = "../limit-deps" }
