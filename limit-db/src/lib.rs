@@ -10,8 +10,13 @@ use volo_grpc::Request;
 pub mod event;
 pub mod macros;
 pub mod orm;
-pub mod schema;
 pub mod user;
+
+pub mod schema {
+    use limit_deps::diesel;
+    
+    include!("schema.rs");
+}
 
 pub type RedisClient = redis::Client;
 
