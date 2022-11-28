@@ -5,27 +5,31 @@ import "auth.proto";
 import "subs.types.proto";
 
 message SubscribableObject {
+    // from server
+    string server = 1;
     // subscribable object id
-    string id = 1;
+    string id = 2;
     // public key
     string pubkey = 6;
 }
 
-message GetObjectsRequest {
+message GetObjectRequest {
     limit.auth.Auth token = 1;
-    // target subscribable object ids
-    repeated string ids = 2;
+    // from server
+    string server = 2;
+    // target subscribable object id
+    string id = 3;
 }
 
-message GetSubscribableObjectsResponse {
-    repeated SubscribableObject objects = 1;
+message GetSubscribableObjectResponse {
+    SubscribableObject object = 1;
 }
 
-message GetProfilesResponse {
-    repeated limit.subs.types.Profile profiles = 1;
+message GetProfileResponse {
+    limit.subs.types.Profile profile = 1;
 }
 
 service SubsService {
-    rpc GetSubscribableObjects(GetObjectsRequest) returns (GetSubscribableObjectsResponse);
-    rpc GetProfiles(GetObjectsRequest) returns (GetProfilesResponse);
+    rpc GetSubscribableObject(GetObjectRequest) returns (GetSubscribableObjectResponse);
+    rpc GetProfile(GetObjectRequest) returns (GetProfileResponse);
 }

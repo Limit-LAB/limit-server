@@ -128,7 +128,7 @@ impl volo_gen::limit::auth::AuthService for AuthService {
     ) -> Result<Response<RequestAuthResponse>, Status> {
         tracing::info!("request_auth: {:?}", req.get_ref().id);
         let (_, redis, pool) = get_db_layer!(req);
-        
+
         let id = req.get_ref().id.clone();
         let _id_guard = id.parse::<Uuid>().map_err(|e| {
             tracing::error!("{}", e);

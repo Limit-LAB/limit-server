@@ -14,7 +14,7 @@ pub mod user;
 
 pub mod schema {
     use limit_deps::diesel;
-    
+
     include!("schema.rs");
 }
 

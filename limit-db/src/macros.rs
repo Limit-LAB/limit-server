@@ -7,7 +7,6 @@ macro_rules! get_db_layer {
         (
             // TODO: redis_cluster
             (),
-
             // redis
             $req.extensions()
                 .get::<limit_db::RedisClient>()
@@ -17,7 +16,6 @@ macro_rules! get_db_layer {
                     Status::internal(e.to_string())
                 })?
                 .clone(),
-            
             // db_pool
             $req.extensions()
                 .get::<limit_db::DBPool>()

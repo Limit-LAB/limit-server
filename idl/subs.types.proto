@@ -17,21 +17,18 @@ message Profile {
     string bio = 3;
     // avatar link
     string avatar = 4;
-
-    oneof detail {
-        User user = 5;
-        Group group = 6;
-    }
+    // subscribable object type
+    Types type = 5;
 }
 
-message User {
+message UserProfileDetails {
     // last seen date
     limit.utils.Date last_seen = 1;
     // last modified date
     limit.utils.Date last_modified = 2;
 }
 
-message Group {
+message GroupProfileDetails {
     // ids of group members
-    repeated string members = 1;
+    repeated Profile members = 1;
 }

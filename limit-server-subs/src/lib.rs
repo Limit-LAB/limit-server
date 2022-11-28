@@ -12,10 +12,10 @@ pub struct SubsService;
 
 #[volo::async_trait]
 impl subs::SubsService for SubsService {
-    async fn get_subscribable_objects(
+    async fn get_subscribable_object(
         &self,
-        req: Request<GetObjectsRequest>,
-    ) -> Result<Response<GetSubscribableObjectsResponse>, Status> {
+        req: Request<GetObjectRequest>,
+    ) -> Result<Response<GetSubscribableObjectResponse>, Status> {
         let subs_req = req.get_ref();
 
         let auth = subs_req.token.as_ref().ok_or_else(|| {
@@ -29,10 +29,10 @@ impl subs::SubsService for SubsService {
         Err(Status::internal("no implementation"))
     }
 
-    async fn get_profiles(
+    async fn get_profile(
         &self,
-        req: Request<GetObjectsRequest>,
-    ) -> Result<Response<GetProfilesResponse>, Status> {
+        req: Request<GetObjectRequest>,
+    ) -> Result<Response<GetProfileResponse>, Status> {
         let subs_req = req.get_ref();
 
         let auth = subs_req.token.as_ref().ok_or_else(|| {
