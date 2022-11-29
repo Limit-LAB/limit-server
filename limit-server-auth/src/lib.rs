@@ -41,11 +41,11 @@ impl JWTSub {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(crate = "limit_deps::serde")]
 pub struct JWTClaim {
-    // device_id/uuid
+    /// device_id/uuid
     pub sub: String,
-    // expiration
+    /// expiration
     pub exp: i64,
-    // issue at
+    /// issue at
     pub iat: i64,
 }
 
@@ -75,6 +75,7 @@ pub fn decode_jwt(token: &str) -> Result<JWTClaim, Status> {
     })
     .map(|token| token.claims)
 }
+
 pub fn encode_jwt(claim: JWTClaim) -> Result<String, Status> {
     jsonwebtoken::encode(
         &jsonwebtoken::Header::default(),
@@ -210,11 +211,7 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                 USER_PRIVACY_SETTINGS::JWT_EXPIRATION,
             ));
 
-        let (sharedkey, expected_passcode, duration): (
-            Option<String>,
-            Option<String>,
-            Option<String>,
-        ) = redis::pipe()
+        let res: (Option<String>, Option<String>, Option<String>) = redis::pipe()
             .cmd("GET")
             .arg(format!("{}:sharedkey", id))
             .cmd("GET")
@@ -226,50 +223,46 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                 tracing::error!("{}", e);
                 Status::internal(e.to_string())
             })?;
-        let (sharedkey, expected_passcode, duration) =
-            // if missing then update cache
-            if sharedkey.is_none() || expected_passcode.is_none() || duration.is_none() {
-                tracing::info!("🈚 do_auth: cache miss for id {:?}", id);
-                let (id, sharedkey, expected_passcode, duration) = run_sql!(
-                    pool,
-                    |mut conn| {
-                        sql_get_user_info
-                            .first::<(String, String, String, String)>(&mut conn)
-                            .map_err(|e| {
-                                tracing::error!("{}", e);
-                                Status::internal(e.to_string())
-                            })
-                    },
-                    |e| {
-                        tracing::error!("{}", e);
-                        Status::internal(e.to_string())
-                    }
-                )?;
-                // update cache
-                redis::pipe()
-                    .cmd("SET")
-                    .arg(format!("{}:sharedkey", id))
-                    .arg(&sharedkey)
-                    .cmd("SET")
-                    .arg(format!("{}:passcode", id))
-                    .arg(&expected_passcode)
-                    .cmd("SET")
-                    .arg(format!("{}:duration", id))
-                    .arg(&duration)
-                    .query(&mut redis)
-                    .map_err(|e| {
-                        tracing::error!("{}", e);
-                        Status::internal(e.to_string())
-                    })?;
-                (sharedkey, expected_passcode, duration)
-            } else {
-                tracing::info!("🈶 do_auth: cache hit for id {:?}", id);
-                (
-                    sharedkey.unwrap(),
-                    expected_passcode.unwrap(),
-                    duration.unwrap(),
-                )
-            };
+        let (sharedkey, expected_passcode, duration) = if let (Some(sk), Some(ep), Some(dur)) = res
+        {
+            tracing::info!("🈶 do_auth: cache hit for id {:?}", id);
+            (sk, ep, dur)
+        } else {
+            tracing::info!("🈚 do_auth: cache miss for id {:?}", id);
+            let (id, sharedkey, expected_passcode, duration) = run_sql!(
+                pool,
+                |mut conn| {
+                    sql_get_user_info
+                        .first::<(String, String, String, String)>(&mut conn)
+                        .map_err(|e| {
+                            tracing::error!("{}", e);
+                            Status::internal(e.to_string())
+                        })
+                },
+                |e| {
+                    tracing::error!("{}", e);
+                    Status::internal(e.to_string())
+                }
+            )?;
+            // update cache
+            redis::pipe()
+                .cmd("SET")
+                .arg(format!("{}:sharedkey", id))
+                .arg(&sharedkey)
+                .cmd("SET")
+                .arg(format!("{}:passcode", id))
+                .arg(&expected_passcode)
+                .cmd("SET")
+                .arg(format!("{}:duration", id))
+                .arg(&duration)
+                .query(&mut redis)
+                .map_err(|e| {
+                    tracing::error!("{}", e);
+                    Status::internal(e.to_string())
+                })?;
+            (sharedkey, expected_passcode, duration)
+        };
+
         let expire =
             chrono::Duration::from_std(std::time::Duration::from_secs(duration.parse().unwrap()))
                 .unwrap();

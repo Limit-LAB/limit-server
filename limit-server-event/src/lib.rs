@@ -3,11 +3,10 @@
 use limit_deps::*;
 
 use anyhow::Context;
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, JoinOnDsl};
 use limit_config::GLOBAL_CONFIG;
 use limit_db::schema::{EVENT, EVENT_SUBSCRIPTIONS, MESSAGE};
 use limit_db::{get_db_layer, run_sql, RedisClient};
-use limit_deps::diesel::JoinOnDsl;
 use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
 use volo_grpc::codegen::StreamExt;
@@ -45,6 +44,7 @@ fn message_to_dbmessage(m: Event) -> limit_db::event::SREvent {
     )
         .into()
 }
+
 fn dbmessage_to_message(m: limit_db::event::SREvent) -> Result<Event, Status> {
     match m.head.event_type.as_str() {
         "message" => {
@@ -77,26 +77,12 @@ impl volo_gen::limit::event::EventService for EventService {
             Status::unauthenticated("no auth token")
         })?;
         let claim = limit_server_auth::decode_jwt(&auth.jwt)?;
-        let ids = claim.sub.split("/").collect::<Vec<_>>();
-        let id = ids[1];
-        let pool = req
-            .extensions()
-            .get::<limit_db::DBPool>()
-            .context("no db extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone();
-        let redis = req
-            .extensions()
-            .get::<RedisClient>()
-            .context("no redis extended to service")
-            .map_err(|e| {
-                tracing::error!("{}", e);
-                Status::internal(e.to_string())
-            })?
-            .clone();
+        let (_, id) = claim.sub.split_once("/").ok_or_else(|| {
+            tracing::error!("invalid uuid");
+            Status::unauthenticated("invalid uuid")
+        })?;
+
+        let (_, redis, pool) = get_db_layer!(req);
         let mut redis_connection = redis.get_connection().map_err(|e| {
             tracing::error!("{}", e);
             Status::internal(e.to_string())
@@ -105,6 +91,7 @@ impl volo_gen::limit::event::EventService for EventService {
             tracing::error!("{}", e);
             Status::internal(e.to_string())
         })?;
+
         let subscriptions: Option<Vec<String>> = redis::cmd("GET")
             .arg(format!("{}:subscribed", id))
             .query(&mut redis_connection)
@@ -137,6 +124,7 @@ impl volo_gen::limit::event::EventService for EventService {
             tracing::info!("🈶 receive message cache hit");
             subscriptions.unwrap()
         };
+
         let mut pubsub = redis_async_connection.into_pubsub();
         for sub in subscriptions {
             pubsub.subscribe(sub).await.map_err(|e| {
@@ -144,6 +132,7 @@ impl volo_gen::limit::event::EventService for EventService {
                 Status::internal(e.to_string())
             })?;
         }
+
         let res = Box::pin(pubsub.into_on_message().map(|msg| {
             Ok(dbmessage_to_message(
                 msg.get_payload()
@@ -171,6 +160,7 @@ impl volo_gen::limit::event::EventService for EventService {
             tracing::error!("message is empty");
             Status::cancelled("message is empty")
         })?;
+
         let current_server_url = GLOBAL_CONFIG.get().unwrap().url.as_str();
         let mut message = event.clone();
         message.event_id = uuid::Uuid::new_v4().to_string();

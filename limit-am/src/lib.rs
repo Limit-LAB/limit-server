@@ -41,7 +41,7 @@ pub fn key_exchange(privkey1: SecretKey, pubkey2: PublicKey) -> String {
 
 pub fn decode_shared_key(encoded: String) -> SharedSecret<NistP256> {
     SharedSecret::from(*GenericArray::from_slice(
-        base64::decode(encoded).unwrap().as_slice(),
+        base64::decode(encoded).unwrap_or_default().as_slice(),
     ))
 }
 
