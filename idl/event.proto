@@ -13,11 +13,9 @@ message Event {
     int64 timestamp = 2;
     // sender uuid of the event
     string sender = 3;
-    // type of the event
-    limit.event.types.Types type = 4;
     // event data
     oneof detail {
-        limit.event.types.Message message = 5;
+        limit.event.types.Message message = 4;
     }
 }
 

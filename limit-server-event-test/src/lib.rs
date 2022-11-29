@@ -234,7 +234,6 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
                     event_id: "".to_string(),
                     timestamp: chrono::Utc::now().timestamp_millis() as i64,
                     sender: id1.clone(),
-                    r#type: 1,
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2,
                         receiver_server: GLOBAL_CONFIG.get().unwrap().url.clone(),
@@ -476,7 +475,6 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
                     event_id: "".to_string(),
                     timestamp: chrono::Utc::now().timestamp_millis() as i64,
                     sender: id1.clone(),
-                    r#type: 1,
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2.clone(),
                         receiver_server: GLOBAL_CONFIG.get().unwrap().url.clone(),
@@ -495,7 +493,6 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
                     event_id: "".to_string(),
                     timestamp: chrono::Utc::now().timestamp_millis() as i64,
                     sender: id1.clone(),
-                    r#type: 1,
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2.clone(),
                         receiver_server: GLOBAL_CONFIG.get().unwrap().url.clone(),
@@ -514,7 +511,6 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
                     event_id: "".to_string(),
                     timestamp: chrono::Utc::now().timestamp_millis() as i64,
                     sender: id1.clone(),
-                    r#type: 1,
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2.clone(),
                         receiver_server: GLOBAL_CONFIG.get().unwrap().url.clone(),

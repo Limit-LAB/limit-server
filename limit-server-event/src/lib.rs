@@ -53,7 +53,6 @@ fn dbmessage_to_message(m: limit_db::event::SREvent) -> Result<Event, Status> {
                 event_id: m.head.id,
                 timestamp: m.head.timestamp,
                 sender: m.head.sender,
-                r#type: 1,
                 detail: Some(Detail::Message(Message {
                     receiver_id: body.receiver_id,
                     receiver_server: body.receiver_server,
@@ -399,7 +398,6 @@ impl volo_gen::limit::event::EventService for EventService {
                                     event_id : event.id,
                                     timestamp : event.timestamp as _,
                                     sender : event.sender,
-                                    r#type : 1,
                                     detail : Some(Detail::Message(Message {
                                         receiver_id: body.receiver_id,
                                         receiver_server: body.receiver_server,
