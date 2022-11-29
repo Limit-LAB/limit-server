@@ -1,9 +1,10 @@
+#![feature(iter_collect_into)]
 #![feature(type_alias_impl_trait)]
 
 use limit_deps::*;
 
 use anyhow::Context;
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, JoinOnDsl};
+use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
 use limit_config::GLOBAL_CONFIG;
 use limit_db::schema::{EVENT, EVENT_SUBSCRIPTIONS, MESSAGE};
 use limit_db::{get_db_layer, run_sql, RedisClient};
@@ -28,7 +29,7 @@ fn message_to_dbmessage(m: Event) -> limit_db::event::SREvent {
     (
         limit_db::event::Event {
             id: m.event_id.clone(),
-            timestamp: m.timestamp,
+            timestamp: m.ts as i64,
             sender: m.sender,
             event_type: "message".to_string(),
         },
@@ -51,7 +52,7 @@ fn dbmessage_to_message(m: limit_db::event::SREvent) -> Result<Event, Status> {
             let limit_db::event::SREventBody::Message(body) = m.body;
             Ok(Event {
                 event_id: m.head.id,
-                timestamp: m.head.timestamp,
+                ts: m.head.timestamp as u64,
                 sender: m.head.sender,
                 detail: Some(Detail::Message(Message {
                     receiver_id: body.receiver_id,
@@ -305,8 +306,14 @@ impl volo_gen::limit::event::EventService for EventService {
         })?;
 
         let claim = limit_server_auth::decode_jwt(&auth.jwt)?;
-        let ids = claim.sub.split("/").collect::<Vec<_>>();
-        let id = ids[1].to_string();
+        let id = claim
+            .sub
+            .split_once("/")
+            .map(|(_, id)| id.to_string())
+            .ok_or_else(|| {
+                tracing::error!("invalid uuid");
+                Status::unauthenticated("invalid uuid")
+            })?;
 
         let from = sync_req.from.as_ref().ok_or_else(|| {
             tracing::error!("no from");
@@ -331,19 +338,20 @@ impl volo_gen::limit::event::EventService for EventService {
         let mut sql_ts_id = None;
         let mut sql_ts_ts = None;
 
+        let count = match sync_req.count {
+            1..=8192 => sync_req.count as i64,
+            _ => 50,
+        };
+
         match from {
             From::IdFrom(from_id) => {
                 let sql = sql.filter(EVENT::ID.gt(from_id));
                 match to {
                     To::IdTo(to_id) => {
-                        sql_id_id =
-                            Some(sql.filter(EVENT::ID.le(to_id)).limit(sync_req.count as i64));
+                        sql_id_id = Some(sql.filter(EVENT::ID.le(to_id)).limit(count));
                     }
                     To::TsTo(to_ts) => {
-                        sql_id_ts = Some(
-                            sql.filter(EVENT::TS.le((*to_ts) as i64))
-                                .limit(sync_req.count as i64),
-                        );
+                        sql_id_ts = Some(sql.filter(EVENT::TS.le((*to_ts) as i64)).limit(count));
                     }
                 }
             }
@@ -351,14 +359,10 @@ impl volo_gen::limit::event::EventService for EventService {
                 let sql = sql.filter(EVENT::TS.gt((*from_ts) as i64));
                 match to {
                     To::IdTo(to_id) => {
-                        sql_ts_id =
-                            Some(sql.filter(EVENT::ID.le(to_id)).limit(sync_req.count as i64));
+                        sql_ts_id = Some(sql.filter(EVENT::ID.le(to_id)).limit(count));
                     }
                     To::TsTo(to_ts) => {
-                        sql_ts_ts = Some(
-                            sql.filter(EVENT::TS.le((*to_ts) as i64))
-                                .limit(sync_req.count as i64),
-                        );
+                        sql_ts_ts = Some(sql.filter(EVENT::TS.le((*to_ts) as i64)).limit(count));
                     }
                 }
             }
@@ -381,12 +385,13 @@ impl volo_gen::limit::event::EventService for EventService {
                             Status::internal(e.to_string())
                         }
                     )?;
-                    let res = res.into_iter().map(|(event, message)| {
+                    let mut ret = Vec::with_capacity(count as usize);
+                    res.into_iter().map(|(event, message)| {
                         match (message,) {
                             (Some((body, _)),) => {
                                 Event {
                                     event_id : event.id,
-                                    timestamp : event.timestamp as _,
+                                    ts : event.timestamp as u64,
                                     sender : event.sender,
                                     detail : Some(Detail::Message(Message {
                                         receiver_id: body.receiver_id,
@@ -398,9 +403,10 @@ impl volo_gen::limit::event::EventService for EventService {
                             }
                             _ => todo!()
                         }
-                    }).collect::<Vec<_>>();
+                    })
+                    .collect_into(&mut ret);
                     return Ok(Response::new(SynchronizeResponse {
-                        events: res,
+                        events: ret,
                     }));
                 };
             };

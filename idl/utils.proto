@@ -3,5 +3,5 @@ package limit.utils;
 
 // using int64 timestamp from UTC
 message Date {
-  int64 ts = 1;
+    uint64 ts = 1;
 }

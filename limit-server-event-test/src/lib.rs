@@ -232,7 +232,7 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
                 token: Some(auth1.get_ref().clone()),
                 event: Some(Event {
                     event_id: "".to_string(),
-                    timestamp: chrono::Utc::now().timestamp_millis() as i64,
+                    ts: chrono::Utc::now().timestamp_millis() as u64,
                     sender: id1.clone(),
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2,
@@ -473,7 +473,7 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
                 token: Some(auth1.get_ref().clone()),
                 event: Some(Event {
                     event_id: "".to_string(),
-                    timestamp: chrono::Utc::now().timestamp_millis() as i64,
+                    ts: chrono::Utc::now().timestamp_millis() as u64,
                     sender: id1.clone(),
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2.clone(),
@@ -491,7 +491,7 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
                 token: Some(auth1.get_ref().clone()),
                 event: Some(Event {
                     event_id: "".to_string(),
-                    timestamp: chrono::Utc::now().timestamp_millis() as i64,
+                    ts: chrono::Utc::now().timestamp_millis() as u64,
                     sender: id1.clone(),
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2.clone(),
@@ -509,7 +509,7 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
                 token: Some(auth1.get_ref().clone()),
                 event: Some(Event {
                     event_id: "".to_string(),
-                    timestamp: chrono::Utc::now().timestamp_millis() as i64,
+                    ts: chrono::Utc::now().timestamp_millis() as u64,
                     sender: id1.clone(),
                     detail: Some(Detail::Message(Message {
                         receiver_id: id2.clone(),
