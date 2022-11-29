@@ -1,4 +1,5 @@
 #![feature(type_alias_impl_trait)]
+#![allow(non_snake_case)]
 
 use limit_deps::*;
 

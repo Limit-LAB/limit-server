@@ -229,7 +229,7 @@ impl volo_gen::limit::auth::AuthService for AuthService {
         let (sharedkey, expected_passcode, duration) =
             // if missing then update cache
             if sharedkey.is_none() || expected_passcode.is_none() || duration.is_none() {
-                tracing::info!("🈚 do_auth: cache miss");
+                tracing::info!("🈚 do_auth: cache miss for id {:?}", id);
                 let (id, sharedkey, expected_passcode, duration) = run_sql!(
                     pool,
                     |mut conn| {
@@ -263,7 +263,7 @@ impl volo_gen::limit::auth::AuthService for AuthService {
                     })?;
                 (sharedkey, expected_passcode, duration)
             } else {
-                tracing::info!("🈶 do_auth: cache hit");
+                tracing::info!("🈶 do_auth: cache hit for id {:?}", id);
                 (
                     sharedkey.unwrap(),
                     expected_passcode.unwrap(),

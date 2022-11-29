@@ -35,7 +35,7 @@ pub struct Event {
     /// should be unique
     #[diesel(column_name = "ID")]
     #[diesel(serialize_as = crate::orm::Uuid)]
-    pub message_id: String,
+    pub id: String,
     /// the timestamp UTC of the message
     #[diesel(column_name = "TS")]
     pub timestamp: i64,
@@ -79,4 +79,6 @@ pub struct EventSubscriptions {
     pub user_id: String,
     #[diesel(column_name = "SUBSCRIBED_TO")]
     pub sub_to: String,
+    #[diesel(column_name = "CHANNEL_TYPE")]
+    pub channel_type: String,
 }

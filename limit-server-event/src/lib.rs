@@ -7,6 +7,7 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use limit_config::GLOBAL_CONFIG;
 use limit_db::schema::{EVENT, EVENT_SUBSCRIPTIONS, MESSAGE};
 use limit_db::{get_db_layer, run_sql, RedisClient};
+use limit_deps::diesel::JoinOnDsl;
 use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
 use volo_grpc::codegen::StreamExt;
@@ -27,7 +28,7 @@ fn message_to_dbmessage(m: Event) -> limit_db::event::SREvent {
     };
     (
         limit_db::event::Event {
-            message_id: m.event_id.clone(),
+            id: m.event_id.clone(),
             timestamp: m.timestamp,
             sender: m.sender,
             event_type: "message".to_string(),
@@ -49,7 +50,7 @@ fn dbmessage_to_message(m: limit_db::event::SREvent) -> Result<Event, Status> {
         "message" => {
             let limit_db::event::SREventBody::Message(body) = m.body;
             Ok(Event {
-                event_id: m.head.message_id,
+                event_id: m.head.id,
                 timestamp: m.head.timestamp,
                 sender: m.head.sender,
                 r#type: 1,
@@ -118,10 +119,11 @@ impl volo_gen::limit::event::EventService for EventService {
             let subs = run_sql!(
                 pool,
                 |mut conn| {
-                    sql.load::<(String, String)>(&mut conn).map_err(|e| {
-                        tracing::error!("{}", e);
-                        Status::internal(e.to_string())
-                    })
+                    sql.load::<(String, String, String)>(&mut conn)
+                        .map_err(|e| {
+                            tracing::error!("{}", e);
+                            Status::internal(e.to_string())
+                        })
                 },
                 |e| {
                     tracing::error!("{}", e);
@@ -129,7 +131,7 @@ impl volo_gen::limit::event::EventService for EventService {
                 }
             )?
             .into_iter()
-            .map(|(_, a)| a)
+            .map(|(_, a, c)| format!("{}:{}", c, a))
             .collect::<Vec<_>>();
             subs
         } else {
@@ -215,7 +217,8 @@ impl volo_gen::limit::event::EventService for EventService {
                             Status::internal(e.to_string())
                         })?
                         .clone();
-                    let insert_event_sql = diesel::insert_into(EVENT::table).values(message.head);
+                    let insert_event_sql =
+                        diesel::insert_into(EVENT::table).values(message.head.clone());
                     let insert_message_sql =
                         diesel::insert_into(MESSAGE::table).values(body.clone());
                     let pool2 = pool.clone();
@@ -234,9 +237,9 @@ impl volo_gen::limit::event::EventService for EventService {
                             }
                         )
                     };
-                    let event_id = event.event_id.clone();
-                    let event_id2 = event.event_id.clone();
-                    let event_id3 = event.event_id.clone();
+                    let event_id = message.head.id.clone();
+                    let event_id2 = message.head.id.clone();
+                    let event_id3 = message.head.id.clone();
                     execute_background_task(BackgroundTask {
                         name: "store_event".to_string(),
                         task: ReusableBoxFuture::new(async move {
@@ -305,7 +308,7 @@ impl volo_gen::limit::event::EventService for EventService {
         req: Request<SynchronizeRequest>,
     ) -> Result<Response<SynchronizeResponse>, Status> {
         let sync_req = req.get_ref();
-        let (_, redis, db_pool) = get_db_layer!(req);
+        let (_, _, db_pool) = get_db_layer!(req);
         // check auth is valid
         let auth = sync_req.token.as_ref().ok_or_else(|| {
             tracing::error!("no auth token");
@@ -314,7 +317,111 @@ impl volo_gen::limit::event::EventService for EventService {
 
         let claim = limit_server_auth::decode_jwt(&auth.jwt)?;
         let ids = claim.sub.split("/").collect::<Vec<_>>();
-        let id = ids[1];
+        let id = ids[1].to_string();
+
+        let from = sync_req.from.as_ref().ok_or_else(|| {
+            tracing::error!("no from");
+            Status::invalid_argument("no from")
+        })?;
+        let to = sync_req.to.as_ref().ok_or_else(|| {
+            tracing::error!("no to");
+            Status::invalid_argument("no to")
+        })?;
+        let sql = EVENT::table
+            .left_join(
+                MESSAGE::table
+                    .inner_join(EVENT_SUBSCRIPTIONS::table.on(EVENT_SUBSCRIPTIONS::USER_ID.eq(id))),
+            )
+            // filter message
+            .filter(MESSAGE::RECEIVER_ID.eq(EVENT_SUBSCRIPTIONS::SUBSCRIBED_TO))
+            .filter(EVENT_SUBSCRIPTIONS::CHANNEL_TYPE.eq("message"))
+            .order(EVENT::ID.desc());
+
+        let mut sql_id_id = None;
+        let mut sql_id_ts = None;
+        let mut sql_ts_id = None;
+        let mut sql_ts_ts = None;
+
+        match from {
+            From::IdFrom(from_id) => {
+                let sql = sql.filter(EVENT::ID.gt(from_id));
+                match to {
+                    To::IdTo(to_id) => {
+                        sql_id_id =
+                            Some(sql.filter(EVENT::ID.le(to_id)).limit(sync_req.count as i64));
+                    }
+                    To::TsTo(to_ts) => {
+                        sql_id_ts = Some(
+                            sql.filter(EVENT::TS.le((*to_ts) as i64))
+                                .limit(sync_req.count as i64),
+                        );
+                    }
+                }
+            }
+            From::TsFrom(from_ts) => {
+                let sql = sql.filter(EVENT::TS.gt((*from_ts) as i64));
+                match to {
+                    To::IdTo(to_id) => {
+                        sql_ts_id =
+                            Some(sql.filter(EVENT::ID.le(to_id)).limit(sync_req.count as i64));
+                    }
+                    To::TsTo(to_ts) => {
+                        sql_ts_ts = Some(
+                            sql.filter(EVENT::TS.le((*to_ts) as i64))
+                                .limit(sync_req.count as i64),
+                        );
+                    }
+                }
+            }
+        };
+
+        macro_rules! send_sync {
+            ($e:expr) => {
+                if let Some(sql) = $e {
+                    let res : Vec<(limit_db::event::Event, Option<(limit_db::event::Message, limit_db::event::EventSubscriptions)>)> = run_sql!(
+                        db_pool,
+                        |mut conn| {
+                            // tracing::info!("sql: {:?}", diesel::debug_query::<diesel::sqlite::Sqlite, _>(&sql));
+                            sql.load::<(limit_db::event::Event, Option<(limit_db::event::Message, limit_db::event::EventSubscriptions)>)>(&mut conn).map_err(|e| {
+                                tracing::error!("{}", e);
+                                Status::internal(e.to_string())
+                            })
+                        },
+                        |e| {
+                            tracing::error!("{}", e);
+                            Status::internal(e.to_string())
+                        }
+                    )?;
+                    let res = res.into_iter().map(|(event, message)| {
+                        match (message,) {
+                            (Some((body, _)),) => {
+                                Event {
+                                    event_id : event.id,
+                                    timestamp : event.timestamp as _,
+                                    sender : event.sender,
+                                    r#type : 1,
+                                    detail : Some(Detail::Message(Message {
+                                        receiver_id: body.receiver_id,
+                                        receiver_server: body.receiver_server,
+                                        text: body.text,
+                                        extensions: serde_json::from_str(&body.extensions).unwrap(),
+                                    })),
+                                }
+                            }
+                            _ => todo!()
+                        }
+                    }).collect::<Vec<_>>();
+                    return Ok(Response::new(SynchronizeResponse {
+                        events: res,
+                    }));
+                };
+            };
+        }
+
+        send_sync!(sql_id_id);
+        send_sync!(sql_id_ts);
+        send_sync!(sql_ts_id);
+        send_sync!(sql_ts_ts);
 
         Err(Status::internal("no implementation"))
     }

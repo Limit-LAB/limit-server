@@ -13,6 +13,7 @@ diesel::table! {
     EVENT_SUBSCRIPTIONS (USER_ID) {
         USER_ID -> Text,
         SUBSCRIBED_TO -> Text,
+        CHANNEL_TYPE -> Text,
     }
 }
 
