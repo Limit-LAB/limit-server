@@ -1,19 +1,16 @@
-#![feature(type_alias_impl_trait)]
-
-use limit_deps::*;
-
 use anyhow::Context;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use futures::StreamExt;
 use limit_config::GLOBAL_CONFIG;
 use limit_db::schema::{EVENT, EVENT_SUBSCRIPTIONS, MESSAGE};
 use limit_db::{get_db_layer, run_sql, RedisClient};
 use limit_deps::diesel::JoinOnDsl;
+use limit_deps::*;
 use limit_utils::{execute_background_task, BackgroundTask};
 use tokio_util::sync::ReusableBoxFuture;
-use volo_grpc::codegen::StreamExt;
-use volo_grpc::{BoxStream, Request, Response, Status};
+use tonic::{codegen::BoxStream, Request, Response, Status};
 
-pub use volo_gen::limit::event::{event::*, synchronize_request::*, types::*, *};
+pub use tonic_gen::event::{event::*, synchronize_request::*, types::*, *};
 
 #[derive(Debug, Clone)]
 // require db
@@ -66,12 +63,13 @@ fn dbmessage_to_message(m: limit_db::event::SREvent) -> Result<Event, Status> {
     }
 }
 
-#[volo::async_trait]
-impl volo_gen::limit::event::EventService for EventService {
+#[tonic::async_trait]
+impl tonic_gen::event::event_service_server::EventService for EventService {
+    type ReceiveEventsStream = BoxStream<Event>;
     async fn receive_events(
         &self,
         req: Request<ReceiveEventsRequest>,
-    ) -> Result<Response<BoxStream<'static, Result<Event, Status>>>, Status> {
+    ) -> Result<Response<Self::ReceiveEventsStream>, Status> {
         // check auth is valid
         let auth = req.get_ref().token.clone().ok_or_else(|| {
             tracing::error!("no auth token");
@@ -145,7 +143,7 @@ impl volo_gen::limit::event::EventService for EventService {
                 Status::internal(e.to_string())
             })?;
         }
-        let res = Box::pin(pubsub.into_on_message().map(|msg| {
+        let res = pubsub.into_on_message().map(|msg| {
             Ok(dbmessage_to_message(
                 msg.get_payload()
                     .map(|payload: String| serde_json::from_str(&payload).unwrap())
@@ -154,8 +152,8 @@ impl volo_gen::limit::event::EventService for EventService {
                         Status::internal(e.to_string())
                     })?,
             )?)
-        }));
-        Ok(Response::new(res))
+        });
+        Ok(Response::new(Box::pin(res)))
     }
 
     async fn send_event(

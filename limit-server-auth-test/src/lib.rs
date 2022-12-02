@@ -1,22 +1,21 @@
-use std::{future::Future, net::SocketAddr, pin::Pin};
+use std::{future::Future, pin::Pin};
 
-use limit_deps::*;
+use limit_deps::{tonic::transport::Server, *};
 
 use diesel::RunQueryDsl;
 use limit_config::GLOBAL_CONFIG;
 use limit_db::{run_sql, schema::*, DBLayer, DBPool};
 use limit_server_auth::{
-    AuthService, AuthServiceClientBuilder, AuthServiceServer, DoAuthRequest, RequestAuthRequest,
+    auth_service_client::AuthServiceClient, auth_service_server::AuthServiceServer, AuthService,
+    DoAuthRequest, RequestAuthRequest,
 };
 use limit_test_utils::{do_with_port, test_service, test_tasks};
 
 pub async fn test_request_auth(port: u16) -> anyhow::Result<()> {
     tracing::info!("\t- test {}::test_request_auth started", module_path!());
 
-    let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
-    let client = AuthServiceClientBuilder::new(module_path!())
-        .address(addr)
-        .build();
+    let addr = format!("http://127.0.0.1:{}", port);
+    let client = AuthServiceClient::connect(addr).await?;
     let id = uuid::Uuid::new_v4().to_string();
 
     let rand_str = client.clone().request_auth(RequestAuthRequest { id }).await;
@@ -103,10 +102,8 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     };
     config().unwrap();
 
-    let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
-    let mut client = AuthServiceClientBuilder::new(module_path!())
-        .address(addr)
-        .build();
+    let addr = format!("http://127.0.0.1:{}", port);
+    let mut client = AuthServiceClient::connect(addr).await?;
 
     // passcode is correct
     let passcode = limit_am::aes256_encrypt_string(&shared_key, "123456").unwrap();
@@ -163,11 +160,11 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
 pub async fn integration_test() {
     do_with_port(|port| async move {
         let tasks: Vec<_> = test_tasks![port, test_request_auth, test_do_auth,];
-
         test_service! {
             port,
-            AuthServiceServer::new(AuthService)
-                .layer_front(DBLayer),
+            Server::builder()
+                .layer(DBLayer)
+                .add_service(AuthServiceServer::new(AuthService)),
             tasks
         };
     })
