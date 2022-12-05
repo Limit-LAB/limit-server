@@ -1,3 +1,5 @@
+#![feature(iter_collect_into)]
+
 use anyhow::Context;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use futures::StreamExt;
