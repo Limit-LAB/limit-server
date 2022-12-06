@@ -1,14 +1,13 @@
 #![feature(string_remove_matches)]
 
-use limit_deps::*;
+use limit_deps::{metrics::increment_counter, *};
 
 use jsonwebtoken::Algorithm;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Validation;
 use limit_db::get_db_layer;
-use limit_utils::execute_background_task;
 use limit_utils::BackgroundTask;
-use tokio_util::sync::ReusableBoxFuture;
+use limit_utils::{execute_background_task, Measurement};
 pub use tonic_gen::auth::*;
 
 use anyhow::Context;
@@ -127,6 +126,7 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
         req: Request<RequestAuthRequest>,
     ) -> Result<Response<RequestAuthResponse>, Status> {
         tracing::info!("request_auth: {:?}", req.get_ref().id);
+        let mut m = Measurement::start("request_auth_generate_passcode");
         let (_, redis, pool) = get_db_layer!(req);
 
         let id = req.get_ref().id.clone();
@@ -137,48 +137,44 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
 
         let passcode = generate_random_passcode();
 
+        m.renew("request_auth_update_cache");
+
         // update random passcode for user
         let _update_cache = redis::cmd("SET")
-            .arg(format!("{}:passcode", id))
+            .arg(format!("{id}:passcode"))
             .arg(&passcode)
             .execute(&mut redis.get_connection().map_err(|e| {
                 tracing::error!("{}", e);
                 Status::internal(e.to_string())
             })?);
 
+        m.renew("request_auth_update_diesel");
+
         let sql = diesel::update(USER_LOGIN_PASSCODE::table)
             .filter(USER_LOGIN_PASSCODE::ID.eq(id))
             .set(USER_LOGIN_PASSCODE::PASSCODE.eq(passcode.clone()));
-        let run_sql = async move {
-            run_sql!(
-                pool,
-                |mut conn| {
-                    sql.execute(&mut conn).map_err(|e| {
+
+        execute_background_task(BackgroundTask::new(
+            "request_auth_update_user_passcode_db",
+            async move {
+                run_sql!(
+                    pool,
+                    |mut conn| {
+                        sql.execute(&mut conn).map_err(|e| {
+                            tracing::error!("{}", e);
+                            Status::internal(e.to_string())
+                        })
+                    },
+                    |e| {
                         tracing::error!("{}", e);
                         Status::internal(e.to_string())
-                    })
-                },
-                |e| {
-                    tracing::error!("{}", e);
-                    Status::internal(e.to_string())
-                }
-            )
-        };
-
-        execute_background_task(BackgroundTask {
-            name: "request_auth_update_user_passcode_db".to_string(),
-            task: ReusableBoxFuture::new(async move {
-                match run_sql.await {
-                    Ok(_) => {
-                        tracing::info!("request_auth_update_user_passcode_db success");
                     }
-                    Err(e) => {
-                        tracing::error!("request_auth_update_user_passcode_db failed: {}", e);
-                    }
-                }
-            }),
-        })
+                )
+            },
+        ))
         .await;
+
+        m.end();
 
         Ok(Response::new(RequestAuthResponse {
             rand_text: passcode.clone(),
@@ -191,6 +187,7 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
             req.get_ref().id,
             req.get_ref().device_id
         );
+        let mut m = Measurement::start("do_auth_load_auth");
         let (_, mut redis, pool) = get_db_layer!(req);
         let id = req.get_ref().id.clone();
         let uuid = uuid::Uuid::parse_str(&id).map_err(|e| {
@@ -212,11 +209,11 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
 
         let res: (Option<String>, Option<String>, Option<String>) = redis::pipe()
             .cmd("GET")
-            .arg(format!("{}:sharedkey", id))
+            .arg(format!("{id}:sharedkey"))
             .cmd("GET")
-            .arg(format!("{}:passcode", id))
+            .arg(format!("{id}:passcode"))
             .cmd("GET")
-            .arg(format!("{}:duration", id))
+            .arg(format!("{id}:duration"))
             .query(&mut redis)
             .map_err(|e| {
                 tracing::error!("{}", e);
@@ -224,10 +221,12 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
             })?;
         let (sharedkey, expected_passcode, duration) = if let (Some(sk), Some(ep), Some(dur)) = res
         {
-            tracing::info!("🈶 do_auth: cache hit for id {:?}", id);
+            increment_counter!("do_auth_cache_hit");
+            tracing::info!("do_auth: cache hit for id {:?}", id);
             (sk, ep, dur)
         } else {
-            tracing::info!("🈚 do_auth: cache miss for id {:?}", id);
+            increment_counter!("do_auth_cache_miss");
+            tracing::info!("do_auth: cache miss for id {:?}", id);
             let (id, sharedkey, expected_passcode, duration) = run_sql!(
                 pool,
                 |mut conn| {
@@ -246,13 +245,13 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
             // update cache
             redis::pipe()
                 .cmd("SET")
-                .arg(format!("{}:sharedkey", id))
+                .arg(format!("{id}:sharedkey"))
                 .arg(&sharedkey)
                 .cmd("SET")
-                .arg(format!("{}:passcode", id))
+                .arg(format!("{id}:passcode"))
                 .arg(&expected_passcode)
                 .cmd("SET")
-                .arg(format!("{}:duration", id))
+                .arg(format!("{id}:duration"))
                 .arg(&duration)
                 .query(&mut redis)
                 .map_err(|e| {
@@ -272,6 +271,7 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
             })?;
 
         if decrypted == expected_passcode {
+            m.renew("do_auth_gen_token");
             tracing::info!("user login success: id: {}", id);
             let jwt = encode_jwt(JWTClaim::new(
                 JWTSub {
@@ -282,45 +282,38 @@ impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
             ))?;
             // update random passcode for user
             let _update_cache = redis::cmd("SET")
-                .arg(format!("{}:passcode", id))
-                .arg(&passcode)
+                .arg(format!("{id}:passcode"))
+                .arg(passcode)
                 .execute(&mut redis);
             let sql = diesel::update(USER_LOGIN_PASSCODE::table)
                 .filter(USER_LOGIN_PASSCODE::ID.eq(id))
                 .set(USER_LOGIN_PASSCODE::PASSCODE.eq(generate_random_passcode()));
-            let run_sql = async move {
-                run_sql!(
-                    pool,
-                    |mut conn| {
-                        sql.execute(&mut conn).map_err(|e| {
+
+            execute_background_task(BackgroundTask::new(
+                "do_auth_update_user_passcode_db",
+                async move {
+                    run_sql!(
+                        pool,
+                        |mut conn| {
+                            sql.execute(&mut conn).map_err(|e| {
+                                tracing::error!("{}", e);
+                                Status::internal(e.to_string())
+                            })
+                        },
+                        |e| {
                             tracing::error!("{}", e);
                             Status::internal(e.to_string())
-                        })
-                    },
-                    |e| {
-                        tracing::error!("{}", e);
-                        Status::internal(e.to_string())
-                    }
-                )
-            };
-            execute_background_task(BackgroundTask {
-                name: "do_auth_update_user_passcode_db".to_string(),
-                task: ReusableBoxFuture::new(async move {
-                    match run_sql.await {
-                        Ok(_) => {
-                            tracing::info!("do_auth_update_user_passcode_db success");
                         }
-                        Err(e) => {
-                            tracing::error!("do_auth_update_user_passcode_db failed: {}", e);
-                        }
-                    }
-                }),
-            })
+                    )
+                },
+            ))
             .await;
+            m.end();
             Ok(Response::new(Auth { jwt }))
         } else {
             // invalid passcode
             tracing::warn!("invalid passcode for id: {}", id);
+            m.end();
             Err(Status::unauthenticated("invalid passcode"))
         }
     }

@@ -41,3 +41,6 @@ pub use futures;
 pub use r2d2;
 pub use r2d2_sqlite;
 pub use redis;
+
+// observability
+pub use metrics;

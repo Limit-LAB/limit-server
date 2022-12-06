@@ -491,7 +491,6 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
     assert!(sync.get_ref().events.len() >= 3);
     tracing::info!("sync messages: {:#?}", sync.get_ref().events);
 
-
     tracing::info!("\t- test {}::test_sync_message finished", module_path!());
     Ok(())
 }

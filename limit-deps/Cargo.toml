@@ -44,6 +44,7 @@ tower = "0.4"
 # database
 r2d2 = "0.8"
 r2d2_sqlite = "0.21"
+metrics = "0.20.1"
 
 [dependencies.redis]
 version = "0.22"
