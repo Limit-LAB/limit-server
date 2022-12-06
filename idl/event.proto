@@ -10,14 +10,12 @@ message Event {
     // could only be empty for sender
     string event_id = 1;
     // sent time of the event
-    int64 timestamp = 2;
+    uint64 ts = 2;
     // sender uuid of the event
     string sender = 3;
-    // type of the event
-    limit.event.types.Types type = 4;
     // event data
     oneof detail {
-        limit.event.types.Message message = 5;
+        limit.event.types.Message message = 4;
     }
 }
 
@@ -67,7 +65,7 @@ message SynchronizeRequest {
         // the ID of the event to start synchronization
         string id_to = 6;
     }
-    int64 count = 7;
+    uint32 count = 7;
 }
 
 message SynchronizeResponse {

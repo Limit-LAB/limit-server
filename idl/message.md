@@ -1,4 +1,5 @@
 # Extensions
+
 format should be `namespace/version/key`
 
 custom extensions is allowed
@@ -6,6 +7,7 @@ custom extensions is allowed
 values are json values
 
 ## basic gui actions
+
 ```json5
 {
     // forward uuid from other message
@@ -32,6 +34,7 @@ values are json values
 ## quick voice and video messages
 
 `string` are urls
+
 ```json5
 {
   "limit/v2/quick_voice": "string",
@@ -41,7 +44,8 @@ values are json values
 
 ## multimedia messages
 
-`string` are urls 
+`string` are urls
+
 ```json5
 {
   "limit/v3/thumbnails": ["string"],

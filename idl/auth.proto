@@ -2,25 +2,25 @@ syntax = "proto3";
 package limit.auth;
 
 message Auth {
-  string jwt = 1;
+    string jwt = 1;
 }
 
 message RequestAuthRequest {
-  string id = 1;
+    string id = 1;
 }
 
 message RequestAuthResponse {
-  string rand_text = 1;
+    string rand_text = 1;
 }
 
 message DoAuthRequest {
-  string id = 1;
-  string device_id = 2;
-  string validated = 3;
+    string id = 1;
+    string device_id = 2;
+    string validated = 3;
 }
 
 service AuthService {
-  // redis id/passcode
-  rpc RequestAuth(RequestAuthRequest) returns (RequestAuthResponse);
-  rpc DoAuth(DoAuthRequest) returns (Auth);
+    // redis id/passcode
+    rpc RequestAuth(RequestAuthRequest) returns (RequestAuthResponse);
+    rpc DoAuth(DoAuthRequest) returns (Auth);
 }
