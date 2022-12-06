@@ -93,9 +93,9 @@ macro_rules! test_service {
 
         tracing::info!("🚀 test {} on port {}", module_path!(), $port);
         let addr: SocketAddr = format!("127.0.0.1:{}", $port).parse().unwrap();
-        let addr = volo::net::Address::from(addr);
+        let addr = addr.into();
         let server = tokio::spawn(async move {
-            let server = $server.run(addr).await.unwrap();
+            let server = $server.serve(addr).await.unwrap();
         });
         tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
         futures::future::join_all($tasks)

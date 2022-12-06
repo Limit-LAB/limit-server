@@ -1,12 +1,12 @@
-#![feature(type_alias_impl_trait)]
 #![allow(non_snake_case)]
 
-use limit_deps::*;
+use std::task::{Context, Poll};
+
+use limit_deps::{hyper::Body, tonic::body::BoxBody, *};
 
 use diesel::{r2d2::ConnectionManager, SqliteConnection};
-use motore::Service;
 use r2d2::Pool;
-use volo_grpc::Request;
+use tower::Service;
 
 pub mod event;
 pub mod macros;
@@ -21,7 +21,7 @@ pub mod schema {
 
 pub type RedisClient = redis::Client;
 
-/// add extension DB to `volo_grpc::Request`
+/// add extension DB to `hyper::Request`
 #[derive(Clone)]
 pub struct DBService<Inner> {
     inner: Inner,
@@ -67,20 +67,6 @@ macro_rules! run_sql {
     };
 }
 
-#[motore::service]
-impl<Cx, Req, I> Service<Cx, Request<Req>> for DBService<I>
-where
-    Req: Send + 'static,
-    I: Service<Cx, Request<Req>> + Send + 'static,
-    Cx: Send + 'static,
-{
-    async fn call(&mut self, cx: &mut Cx, mut req: Request<Req>) -> Result<I::Response, I::Error> {
-        req.extensions_mut().insert(self.pool.clone());
-        req.extensions_mut().insert(self.redis_pool.clone());
-        self.inner.call(cx, req).await
-    }
-}
-
 static GLOBAL_DB_POOL: once_cell::sync::Lazy<DBPool> =
     once_cell::sync::Lazy::new(|| DBPool::new(limit_config::GLOBAL_CONFIG.get().unwrap()));
 
@@ -91,10 +77,37 @@ static GLOBAL_REDIS_CLIENT: once_cell::sync::Lazy<redis::Client> =
 /// DB Service Layer
 pub struct DBLayer;
 
-impl<S> volo::Layer<S> for DBLayer {
+impl<S> Service<hyper::Request<Body>> for DBService<S>
+where
+    S: Service<hyper::Request<Body>, Response = hyper::Response<BoxBody>> + Clone + Send + 'static,
+    S::Future: Send + 'static,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = futures::future::BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, mut req: hyper::Request<Body>) -> Self::Future {
+        // This is necessary because tonic internally uses `tower::buffer::Buffer`.
+        // See https://github.com/tower-rs/tower/issues/547#issuecomment-767629149
+        // for details on why this is necessary
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
+
+        req.extensions_mut().insert(self.pool.clone());
+        req.extensions_mut().insert(self.redis_pool.clone());
+
+        Box::pin(inner.call(req))
+    }
+}
+
+impl<S> tower::Layer<S> for DBLayer {
     type Service = DBService<S>;
 
-    fn layer(self, inner: S) -> Self::Service {
+    fn layer(&self, inner: S) -> Self::Service {
         DBService {
             inner,
             pool: GLOBAL_DB_POOL.clone(),

@@ -1,4 +1,3 @@
-#![feature(type_alias_impl_trait)]
 #![feature(string_remove_matches)]
 
 use limit_deps::*;
@@ -10,7 +9,7 @@ use limit_db::get_db_layer;
 use limit_utils::execute_background_task;
 use limit_utils::BackgroundTask;
 use tokio_util::sync::ReusableBoxFuture;
-pub use volo_gen::limit::auth::*;
+pub use tonic_gen::auth::*;
 
 use anyhow::Context;
 use chrono::{Duration, Utc};
@@ -23,8 +22,8 @@ use limit_db::schema::USER;
 use limit_db::schema::USER_LOGIN_PASSCODE;
 use limit_db::schema::USER_PRIVACY_SETTINGS;
 use serde::{Deserialize, Serialize};
+use tonic::{Request, Response, Status};
 use uuid::Uuid;
-use volo_grpc::{Request, Response, Status};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JWTSub {
@@ -121,8 +120,8 @@ fn generate_random_passcode() -> String {
 /// requires DB connection
 pub struct AuthService;
 
-#[volo::async_trait]
-impl volo_gen::limit::auth::AuthService for AuthService {
+#[tonic::async_trait]
+impl tonic_gen::auth::auth_service_server::AuthService for AuthService {
     async fn request_auth(
         &self,
         req: Request<RequestAuthRequest>,

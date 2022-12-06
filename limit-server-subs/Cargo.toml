@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-volo-gen = { path = "../volo-gen" }
+tonic-gen = { path = "../tonic-gen" }
 
 limit-deps = { path = "../limit-deps" }
 limit-db = { path = "../limit-db" }
