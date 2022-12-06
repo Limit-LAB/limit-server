@@ -28,6 +28,8 @@ jobs:
       run: diesel migration run
     # - name: check fmt
     #   run: cargo fmt --check
+    - name: Install protoc
+      run: sudo apt install -y protobuf-compiler
     - name: Build
       run: cargo build
     - name: Start Redis
