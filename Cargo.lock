@@ -938,15 +938,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "limit-http-agent"
-version = "0.1.0"
-dependencies = [
- "limit-config",
- "limit-deps",
- "tonic-gen",
-]
-
-[[package]]
 name = "limit-server"
 version = "0.1.0"
 dependencies = [

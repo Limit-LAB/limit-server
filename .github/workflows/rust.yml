@@ -23,12 +23,12 @@ jobs:
         with:
           override: true
           components: rustfmt, clippy
-      - name: diesel_cli
+      - name: Install diesel_cli
         run: cargo install diesel_cli --no-default-features --features sqlite
-      - name: run diesel migration
+      - name: Run diesel migration
         run: diesel migration run
-      # - name: check fmt
-      #   run: cargo fmt --check
+      - name: Check
+        run: cargo check --workspace --all-targets --all-features
       - name: Install protoc
         run: sudo apt install -y protobuf-compiler
       - name: Build
