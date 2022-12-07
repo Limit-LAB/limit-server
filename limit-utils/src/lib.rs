@@ -32,7 +32,8 @@ impl BackgroundTask {
                 let m = Measurement::start(&name2);
                 task.map(move |r| match r {
                     Ok(t) => {
-                        tracing::info!("{name2} success, returned ({t:?})");
+                        tracing::info!("{name2} success");
+                        tracing::debug!("{name2} returned ({t:?})");
                     }
                     Err(e) => {
                         tracing::error!("{name2} failed: {e}");
