@@ -13,22 +13,7 @@ limit-test-utils = { path = "./limit-test-utils" }
 
 [workspace]
 members = [
-    "limit-deps",
-
-    "limit-server-auth",
-    "limit-server-auth-test",
-
-    "limit-server-event",
-    "limit-server-event-test",
-
-    "limit-server-subs",
-
-    "limit-db",
-    "limit-config",
-    "limit-test-utils",
-
-    "limit-utils",
-
+    "limit-*",
     "tonic-gen"
 ]
 
