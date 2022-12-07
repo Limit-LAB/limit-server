@@ -27,10 +27,10 @@ jobs:
         run: cargo install diesel_cli --no-default-features --features sqlite
       - name: Run diesel migration
         run: diesel migration run
-      - name: Check
-        run: cargo check --workspace --all-targets --all-features
       - name: Install protoc
         run: sudo apt install -y protobuf-compiler
+      - name: Check
+        run: cargo check --workspace --all-targets --all-features
       - name: Build
         run: cargo build
       - name: Start Redis
