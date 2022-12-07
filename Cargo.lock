@@ -917,6 +917,7 @@ dependencies = [
  "hyper",
  "jsonwebtoken",
  "metrics",
+ "mod_use",
  "once_cell",
  "p256",
  "prost",
@@ -1110,6 +1111,12 @@ dependencies = [
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
 ]
+
+[[package]]
+name = "mod_use"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d95ee98a292cf91c2f5b3f35424773af16842a68b3be33b389137606b2633539"
 
 [[package]]
 name = "multimap"

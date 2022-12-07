@@ -20,6 +20,7 @@ pub use rand;
 pub use toml;
 pub use uuid;
 pub use url;
+pub use mod_use;
 
 // logging
 pub use tracing;
