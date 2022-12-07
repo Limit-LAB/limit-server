@@ -46,13 +46,6 @@ pub enum Metrics {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(crate = "limit_deps::serde")]
-pub struct Agent {
-    /// agent bind address
-    pub addr: SocketAddr,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(crate = "limit_deps::serde")]
 pub struct Config {
     /// server url
     pub url: String,
@@ -83,7 +76,4 @@ pub struct Config {
     /// per user message on-the-fly limit
     /// default is 100
     pub per_user_message_on_the_fly_limit: usize,
-
-    /// http agent setting
-    pub agent: Agent,
 }

@@ -33,9 +33,6 @@ pub fn mock_config() -> limit_config::Config {
                 server_secret_key,
                 server_public_key,
                 per_user_message_on_the_fly_limit: 100,
-                agent: Agent {
-                    addr: "127.0.0.1:12345".parse().unwrap(),
-                },
             }
         })
         .clone()
