@@ -19,6 +19,7 @@ pub use once_cell;
 pub use rand;
 pub use toml;
 pub use uuid;
+pub use url;
 
 // logging
 pub use tracing;

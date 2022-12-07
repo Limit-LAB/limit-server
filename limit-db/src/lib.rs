@@ -39,7 +39,9 @@ impl DBPool {
     pub fn new(config: &limit_config::Config) -> Self {
         match &config.database {
             limit_config::Database::Sqlite { path } => {
-                let manager = ConnectionManager::<SqliteConnection>::new(path);
+                let manager = ConnectionManager::<SqliteConnection>::new(
+                    path.to_str().expect("Invalid sqlite path"),
+                );
                 let pool = Pool::builder()
                     .test_on_check_out(true)
                     .build(manager)

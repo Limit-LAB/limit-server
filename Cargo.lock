@@ -933,7 +933,17 @@ dependencies = [
  "tower",
  "tracing",
  "tracing-subscriber",
+ "url",
  "uuid",
+]
+
+[[package]]
+name = "limit-http-agent"
+version = "0.1.0"
+dependencies = [
+ "limit-config",
+ "limit-deps",
+ "tonic-gen",
 ]
 
 [[package]]
@@ -2167,6 +2177,7 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]

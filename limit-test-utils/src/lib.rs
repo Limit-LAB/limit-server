@@ -11,9 +11,9 @@ pub fn mock_config() -> limit_config::Config {
         .get_or_init(|| {
             let (server_secret_key, server_public_key) = limit_am::create_random_secret().unwrap();
             Config {
-                url: "127.0.0.1:1313".to_string(),
+                url: "127.0.0.1:1313".parse().unwrap(),
                 database: Database::Sqlite {
-                    path: "test.sqlite".to_string(),
+                    path: "test.sqlite".parse().unwrap(),
                 },
                 jwt_secret: "mock".to_string(),
                 database_pool_thread_count: 3,
@@ -33,6 +33,9 @@ pub fn mock_config() -> limit_config::Config {
                 server_secret_key,
                 server_public_key,
                 per_user_message_on_the_fly_limit: 100,
+                agent: Agent {
+                    addr: "127.0.0.1:12345".parse().unwrap(),
+                },
             }
         })
         .clone()

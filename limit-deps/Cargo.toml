@@ -44,7 +44,10 @@ tower = "0.4"
 # database
 r2d2 = "0.8"
 r2d2_sqlite = "0.21"
+
+# observability
 metrics = "0.20.1"
+url = { version = "2.3.1", features = ["serde"] }
 
 [dependencies.redis]
 version = "0.22"
