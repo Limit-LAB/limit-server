@@ -1,6 +1,11 @@
+#![feature(type_alias_impl_trait)]
+#![feature(trait_alias)]
 #![allow(non_snake_case)]
 
-use std::task::{Context, Poll};
+use std::{
+    future::Future,
+    task::{Context, Poll},
+};
 
 use diesel::{r2d2::ConnectionManager, SqliteConnection};
 use limit_deps::{hyper::Body, tonic::body::BoxBody, *};
@@ -81,13 +86,13 @@ static GLOBAL_REDIS_CLIENT: once_cell::sync::Lazy<redis::Client> =
 /// DB Service Layer
 pub struct DBLayer;
 
-impl<S> Service<hyper::Request<Body>> for DBService<S>
-where
-    S: Service<hyper::Request<Body>, Response = hyper::Response<BoxBody>> + Clone + Send + 'static,
-    S::Future: Send + 'static,
-{
+pub trait HyperService = Service<hyper::Request<Body>, Response = hyper::Response<BoxBody>> + Clone;
+
+type DBServiceFut<S: HyperService> = impl Future<Output = Result<S::Response, S::Error>>;
+
+impl<S: HyperService> Service<hyper::Request<Body>> for DBService<S> {
     type Error = S::Error;
-    type Future = futures::future::BoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Future = DBServiceFut<S>;
     type Response = S::Response;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -104,7 +109,7 @@ where
         req.extensions_mut().insert(self.pool.clone());
         req.extensions_mut().insert(self.redis_pool.clone());
 
-        Box::pin(inner.call(req))
+        async move { inner.call(req).await }
     }
 }
 
