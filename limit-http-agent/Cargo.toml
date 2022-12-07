@@ -1,0 +1,12 @@
+[package]
+name = "limit-http-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+limit-config = { version = "0.1.0", path = "../limit-config" }
+limit-deps = { version = "0.1.0", path = "../limit-deps" }
+tonic-gen = { version = "0.1.0", path = "../tonic-gen" }
+
+axum = { version = "0.6.1", features = ["http2", "headers", "macros", "tower-log"] }
+utoipa = "2.4.2"
