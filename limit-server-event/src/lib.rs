@@ -9,7 +9,6 @@ use limit_db::{get_db_layer, run_sql, RedisClient};
 use limit_deps::diesel::JoinOnDsl;
 use limit_deps::*;
 use limit_utils::{execute_background_task, BackgroundTask};
-use tokio_util::sync::ReusableBoxFuture;
 use tonic::{codegen::BoxStream, Request, Response, Status};
 
 pub use tonic_gen::event::{event::*, synchronize_request::*, types::*, *};
@@ -134,14 +133,14 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
             })?;
         }
         let res = pubsub.into_on_message().map(|msg| {
-            Ok(dbmessage_to_message(
+            dbmessage_to_message(
                 msg.get_payload()
                     .map(|payload: String| serde_json::from_str(&payload).unwrap())
                     .map_err(|e| {
                         tracing::error!("{}", e);
                         Status::internal(e.to_string())
                     })?,
-            )?)
+            )
         });
         Ok(Response::new(Box::pin(res)))
     }
@@ -211,7 +210,11 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
                     let insert_message_sql =
                         diesel::insert_into(MESSAGE::table).values(body.clone());
                     let pool2 = pool.clone();
-                    let run_sql = async move {
+
+                    let event_id = message.head.id.clone();
+                    let event_id2 = message.head.id.clone();
+                    let event_id3 = message.head.id.clone();
+                    execute_background_task(BackgroundTask::new("store_event", async move {
                         run_sql!(
                             pool,
                             |mut conn| {
@@ -225,29 +228,10 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
                                 Status::internal(e.to_string())
                             }
                         )
-                    };
-                    let event_id = message.head.id.clone();
-                    let event_id2 = message.head.id.clone();
-                    let event_id3 = message.head.id.clone();
-                    execute_background_task(BackgroundTask {
-                        name: "store_event".to_string(),
-                        task: ReusableBoxFuture::new(async move {
-                            match run_sql.await {
-                                Ok(_) => {
-                                    tracing::info!("event {:?} saved", event_id);
-                                }
-                                Err(e) => {
-                                    tracing::error!(
-                                        "unable to save event {:?} with {:?}",
-                                        event_id,
-                                        e
-                                    )
-                                }
-                            }
-                        }),
-                    })
+                    }))
                     .await;
-                    let run_sql = async move {
+
+                    execute_background_task(BackgroundTask::new("store_message", async move {
                         run_sql!(
                             pool2,
                             |mut conn| {
@@ -261,25 +245,7 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
                                 Status::internal(e.to_string())
                             }
                         )
-                    };
-                    execute_background_task(BackgroundTask {
-                        name: "store_message".to_string(),
-                        task: ReusableBoxFuture::new(async move {
-                            // TODO: save message
-                            match run_sql.await {
-                                Ok(_) => {
-                                    tracing::info!("message {:?} saved", event_id2);
-                                }
-                                Err(e) => {
-                                    tracing::error!(
-                                        "unable to save message {:?} with {:?}",
-                                        event_id2,
-                                        e
-                                    )
-                                }
-                            }
-                        }),
-                    })
+                    }))
                     .await;
                     Ok(Response::new(SendEventResponse {
                         event_id: event_id3,
@@ -307,7 +273,7 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
         let claim = limit_server_auth::decode_jwt(&auth.jwt)?;
         let id = claim
             .sub
-            .split_once("/")
+            .split_once('/')
             .map(|(_, id)| id.to_string())
             .ok_or_else(|| {
                 tracing::error!("invalid uuid");

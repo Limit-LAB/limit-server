@@ -1,4 +1,6 @@
-use limit_deps::*;
+use std::{error::Error, fmt::Debug, future::Future};
+
+use limit_deps::{futures::FutureExt, metrics::histogram, tokio::time::Instant, *};
 
 use once_cell::sync::Lazy;
 use tokio::sync::mpsc::Receiver;
@@ -11,8 +13,37 @@ pub enum ControlMessage {
 
 #[derive(Debug)]
 pub struct BackgroundTask {
-    pub name: String,
-    pub task: ReusableBoxFuture<'static, ()>,
+    name: String,
+    task: ReusableBoxFuture<'static, ()>,
+}
+
+impl BackgroundTask {
+    pub fn new<I, T, E, F>(name: I, task: F) -> Self
+    where
+        I: Into<String>,
+        T: Debug,
+        E: Error,
+        F: Future<Output = Result<T, E>> + Send + 'static,
+    {
+        let name = name.into();
+        let name2 = name.clone();
+        Self {
+            task: ReusableBoxFuture::new(async {
+                let m = Measurement::start(&name2);
+                task.map(move |r| match r {
+                    Ok(t) => {
+                        tracing::info!("{name2} success, returned ({t:?})");
+                    }
+                    Err(e) => {
+                        tracing::error!("{name2} failed: {e}");
+                    }
+                })
+                .await;
+                m.end();
+            }),
+            name,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -26,7 +57,7 @@ impl BackgroundWorker {
         loop {
             tokio::select! {
                 Some(task) = queue.recv() => {
-                    tracing::info!("🚀 background task {} started", task.name);
+                    tracing::info!("background task {} started", task.name);
                     tokio::spawn(task.task);
                 }
                 Some(msg) = control.recv() => {
@@ -64,4 +95,54 @@ pub async fn batch_execute_background_tasks(tasks: Vec<BackgroundTask>) {
 
 pub async fn execute_background_task(task: BackgroundTask) {
     GLOBAL_EVENT_LOOP.0.send(task).await.unwrap();
+}
+
+/// A guard that record multiple histograms on demand or on dropped. To properly
+/// record measurements without any noise, remember use [`Measurement::end`], or
+/// an `early_exit` event will be recorded.
+pub struct Measurement {
+    name: String,
+    start: Instant,
+    ongoing: bool,
+}
+
+impl Measurement {
+    pub fn start(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            start: Instant::now(),
+            ongoing: true,
+        }
+    }
+
+    /// Record current elapsed time and start a new measurement **without reset** the timer
+    pub fn record(&mut self, new_name: impl Into<String>) -> &mut Self {
+        histogram!(self.name.clone(), self.start.elapsed());
+        self.name = new_name.into();
+        self
+    }
+
+    /// Record current elapsed time, start a new measurement and **reset** the timer
+    pub fn renew(&mut self, new_name: impl Into<String>) -> &mut Self {
+        histogram!(self.name.clone(), self.start.elapsed());
+        self.name = new_name.into();
+        self.start = Instant::now();
+        self
+    }
+
+    /// Record current elapsed time and stop the measurement
+    pub fn end(mut self) {
+        let s = std::mem::take(&mut self.name);
+        histogram!(s, self.start.elapsed());
+        self.ongoing = false;
+    }
+}
+
+impl Drop for Measurement {
+    fn drop(&mut self) {
+        if self.ongoing {
+            let s = std::mem::take(&mut self.name);
+            histogram!(s, self.start.elapsed(), "status" => "early_exit");
+        }
+    }
 }

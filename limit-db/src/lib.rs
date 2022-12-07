@@ -55,16 +55,19 @@ impl DBPool {
 
 #[macro_export]
 macro_rules! run_sql {
-    ($pool: expr, $e: expr, $err: expr) => {
+    ($pool: expr, $e: expr, $err: expr) => {{
+        let d = std::time::Instant::now();
         match &$pool {
             limit_db::DBPool::Sqlite(pool) => {
                 let conn = pool.get().map_err($err)?;
-                $e(conn)
+                let res = $e(conn);
+                metrics::histogram!("database_sqlite_execution", d.elapsed());
+                res
             }
             limit_db::DBPool::Postgres => todo!(),
             limit_db::DBPool::Mysql => todo!(),
         }
-    };
+    }};
 }
 
 static GLOBAL_DB_POOL: once_cell::sync::Lazy<DBPool> =
