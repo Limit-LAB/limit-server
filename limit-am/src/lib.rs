@@ -95,27 +95,27 @@ fn test_key_exchange_encode_decode() {
     let user1_to_2_shared_secret = key_exchange(user1_secret_decoded, user2_pubkey);
     let user2_to_1_shared_secret = key_exchange(user2_secret_decoded, user1_pubkey);
     assert_eq!(user1_to_2_shared_secret, user2_to_1_shared_secret);
-    println!("Shared secret: {}", user1_to_2_shared_secret);
+    println!("Shared secret: {user1_to_2_shared_secret}");
 
     println!();
     // user 1 send message to user 2
     let plaintext = "hello user 2 how do you do";
-    println!("plaintext: {}", plaintext);
+    println!("plaintext: {plaintext}");
     let ciphertext1_to_2 = aes256_encrypt_string(&user1_to_2_shared_secret, plaintext).unwrap();
-    println!("ciphertext: {}", ciphertext1_to_2);
+    println!("ciphertext: {ciphertext1_to_2}");
     let decoded1_to_2 =
         aes256_decrypt_string(&user2_to_1_shared_secret, &ciphertext1_to_2).unwrap();
-    println!("decoded from user2: {}", decoded1_to_2);
+    println!("decoded from user2: {decoded1_to_2}");
     assert_eq!(plaintext, decoded1_to_2);
 
     println!();
     // user 2 send message to user 1
     let plaintext = "hi user 1, nice to meet you";
-    println!("plaintext: {}", plaintext);
+    println!("plaintext: {plaintext}");
     let ciphertext2_to_1 = aes256_encrypt_string(&user2_to_1_shared_secret, plaintext).unwrap();
-    println!("ciphertext: {}", ciphertext2_to_1);
+    println!("ciphertext: {ciphertext2_to_1}");
     let decoded2_to_1 =
         aes256_decrypt_string(&user1_to_2_shared_secret, &ciphertext2_to_1).unwrap();
-    println!("decoded from user1: {}", decoded2_to_1);
+    println!("decoded from user1: {decoded2_to_1}");
     assert_eq!(plaintext, decoded2_to_1);
 }

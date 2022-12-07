@@ -166,7 +166,7 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
                 |mut con| diesel::insert_into(EVENT_SUBSCRIPTIONS::table)
                     .values(EventSubscriptions {
                         user_id: id.clone(),
-                        sub_to: format!("{}", id.clone()),
+                        sub_to: id.clone(),
                         channel_type: "message".to_string(),
                     })
                     .execute(&mut con)
@@ -179,7 +179,7 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
         };
         config().unwrap();
     }
-    let addr = format!("http://127.0.0.1:{}", port);
+    let addr = format!("http://127.0.0.1:{port}");
     let mut auth_client = AuthServiceClient::connect(addr.clone()).await?;
     let passcode = limit_am::aes256_encrypt_string(&shared_key, "123456").unwrap();
     let res = auth_client
@@ -248,7 +248,7 @@ pub async fn test_send_message(port: u16) -> anyhow::Result<()> {
 
 pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
     tracing::info!("\t- test {}::test_sync_message started", module_path!());
-    let send_ts = chrono::Utc::now().timestamp_millis() as i64;
+    let send_ts = chrono::Utc::now().timestamp_millis();
     let _device_id = uuid::Uuid::new_v4().to_string();
     let (user_sec_key, user_pubkey) = limit_am::create_random_secret().unwrap();
     let pubkey = limit_am::decode_public(&user_pubkey).unwrap();
@@ -386,7 +386,7 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
                 |mut con| diesel::insert_into(EVENT_SUBSCRIPTIONS::table)
                     .values(EventSubscriptions {
                         user_id: id.clone(),
-                        sub_to: format!("{}", id.clone()),
+                        sub_to: id.clone(),
                         channel_type: "message".to_string(),
                     })
                     .execute(&mut con)
@@ -399,7 +399,7 @@ pub async fn test_sync_message(port: u16) -> anyhow::Result<()> {
         };
         config().unwrap();
     }
-    let addr = format!("http://127.0.0.1:{}", port);
+    let addr = format!("http://127.0.0.1:{port}");
     let mut auth_client = AuthServiceClient::connect(addr.clone()).await?;
     let passcode = limit_am::aes256_encrypt_string(&shared_key, "123456").unwrap();
     let res = auth_client

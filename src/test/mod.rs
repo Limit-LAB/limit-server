@@ -30,7 +30,7 @@ fn integration_test() {
     .for_each(|r| {
         if let Err(e) = r {
             tracing::error!("💥integration test failed💥: {}", e);
-            panic!("💥integration test failed💥: {}", e);
+            panic!("💥integration test failed💥: {e}");
         }
     });
     tracing::info!("🎉integration tests finished🎉");

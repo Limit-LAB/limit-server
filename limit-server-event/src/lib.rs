@@ -77,7 +77,7 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
             Status::unauthenticated("no auth token")
         })?;
         let claim = limit_server_auth::decode_jwt(&auth.jwt)?;
-        let (_, id) = claim.sub.split_once("/").ok_or_else(|| {
+        let (_, id) = claim.sub.split_once('/').ok_or_else(|| {
             tracing::error!("invalid uuid");
             Status::unauthenticated("invalid uuid")
         })?;
@@ -93,14 +93,17 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
         })?;
 
         let subscriptions: Option<Vec<String>> = redis::cmd("GET")
-            .arg(format!("{}:subscribed", id))
+            .arg(format!("{id}:subscribed"))
             .query(&mut redis_connection)
             .map_err(|e| {
                 tracing::error!("{}", e);
                 Status::internal(e.to_string())
             })?;
-        let subscriptions = if subscriptions.is_none() {
-            tracing::info!("🈚 receive message cache miss");
+        let subscriptions = if let Some(subscriptions) = subscriptions {
+            tracing::info!("receive message cache hit");
+            subscriptions
+        } else {
+            tracing::info!("receive message cache miss");
             let sql = EVENT_SUBSCRIPTIONS::table.filter(EVENT_SUBSCRIPTIONS::USER_ID.eq(id));
             let subs = run_sql!(
                 pool,
@@ -117,12 +120,9 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
                 }
             )?
             .into_iter()
-            .map(|(_, a, c)| format!("{}:{}", c, a))
+            .map(|(_, a, c)| format!("{c}:{a}"))
             .collect::<Vec<_>>();
             subs
-        } else {
-            tracing::info!("🈶 receive message cache hit");
-            subscriptions.unwrap()
         };
 
         let mut pubsub = redis_async_connection.into_pubsub();
@@ -170,7 +170,7 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
             _ => return Err(Status::internal("no implementation")),
         };
 
-        if &msg_detail.receiver_server == current_server_url {
+        if msg_detail.receiver_server == current_server_url {
             let mut redis = req
                 .extensions()
                 .get::<RedisClient>()
@@ -211,8 +211,8 @@ impl tonic_gen::event::event_service_server::EventService for EventService {
                         diesel::insert_into(MESSAGE::table).values(body.clone());
                     let pool2 = pool.clone();
 
-                    let event_id = message.head.id.clone();
-                    let event_id2 = message.head.id.clone();
+                    let _event_id = message.head.id.clone();
+                    let _event_id2 = message.head.id.clone();
                     let event_id3 = message.head.id.clone();
                     execute_background_task(BackgroundTask::new("store_event", async move {
                         run_sql!(

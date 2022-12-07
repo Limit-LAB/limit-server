@@ -14,7 +14,7 @@ use limit_test_utils::{do_with_port, test_service, test_tasks};
 pub async fn test_request_auth(port: u16) -> anyhow::Result<()> {
     tracing::info!("\t- test {}::test_request_auth started", module_path!());
 
-    let addr = format!("http://127.0.0.1:{}", port);
+    let addr = format!("http://127.0.0.1:{port}");
     let client = AuthServiceClient::connect(addr).await?;
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -102,7 +102,7 @@ pub async fn test_do_auth(port: u16) -> anyhow::Result<()> {
     };
     config().unwrap();
 
-    let addr = format!("http://127.0.0.1:{}", port);
+    let addr = format!("http://127.0.0.1:{port}");
     let mut client = AuthServiceClient::connect(addr).await?;
 
     // passcode is correct
