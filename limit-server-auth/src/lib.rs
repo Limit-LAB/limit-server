@@ -95,17 +95,31 @@ fn test_encode_decode() {
 }
 
 fn generate_random_passcode() -> String {
-    use rand::Rng;
-    let mut rng = rand::thread_rng();
-    let mut passcode = String::new();
-    let pool = [
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B',
-        'C', 'D', 'E', 'F', '!', '@', '#', '$', '%', '^', '&', '*', '_', '=', '+',
+    const POOL: &[u8] = &[
+        b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'a', b'b', b'c', b'd', b'e',
+        b'f', b'A', b'B', b'C', b'D', b'E', b'F', b'!', b'@', b'#', b'$', b'%', b'^', b'&', b'*',
+        b'_', b'=', b'+',
     ];
-    for _ in 0..6 {
-        passcode.push(pool[rng.gen_range(0..33)]);
-    }
+    const POOL_SIZE: usize = POOL.len();
+
+    use rand::Rng;
+
+    let mut rng = rand::thread_rng();
+    let mut passcode = [0; 6];
+
     passcode
+        .iter_mut()
+        .for_each(|b| *b = POOL[rng.gen_range(0..POOL_SIZE)]);
+
+    // SAFETY: passcode is generated from a pool of ascii bytes
+    unsafe { std::str::from_utf8_unchecked(&passcode) }.to_string()
+}
+
+#[test]
+fn test_generate_random_passcode() {
+    let passcode = generate_random_passcode();
+    println!("{passcode}");
+    assert_eq!(passcode.len(), 6);
 }
 
 /// requires DB connection
