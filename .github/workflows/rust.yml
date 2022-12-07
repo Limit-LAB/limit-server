@@ -2,39 +2,41 @@ name: Rust
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master", "subs"]
   pull_request:
-    branches: [ "master" ]
+    types:
+      - review_requested
+      - ready_for_review
+      - opened
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
+      - uses: actions/checkout@v2
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
           toolchain: nightly
           override: true
           components: rustfmt, clippy
-    - name: diesel_cli
-      run: cargo install diesel_cli --no-default-features --features sqlite
-    - name: run diesel migration
-      run: diesel migration run
-    # - name: check fmt
-    #   run: cargo fmt --check
-    - name: Install protoc
-      run: sudo apt install -y protobuf-compiler
-    - name: Build
-      run: cargo build
-    - name: Start Redis
-      uses: supercharge/redis-github-action@1.4.0
-      with:
-        redis-version: 6
-    - name: Run tests
-      run: cargo test -- --test-threads=1
+      - name: diesel_cli
+        run: cargo install diesel_cli --no-default-features --features sqlite
+      - name: run diesel migration
+        run: diesel migration run
+      # - name: check fmt
+      #   run: cargo fmt --check
+      - name: Install protoc
+        run: sudo apt install -y protobuf-compiler
+      - name: Build
+        run: cargo build
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.4.0
+        with:
+          redis-version: 6
+      - name: Run tests
+        run: cargo test -- --test-threads=1
