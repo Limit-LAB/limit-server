@@ -2,9 +2,8 @@
 
 use std::task::{Context, Poll};
 
-use limit_deps::{hyper::Body, tonic::body::BoxBody, *};
-
 use diesel::{r2d2::ConnectionManager, SqliteConnection};
+use limit_deps::{hyper::Body, tonic::body::BoxBody, *};
 use r2d2::Pool;
 use tower::Service;
 
@@ -55,7 +54,7 @@ impl DBPool {
 
 #[macro_export]
 macro_rules! run_sql {
-    ($pool: expr, $e: expr, $err: expr) => {{
+    ($pool:expr, $e:expr, $err:expr) => {{
         let d = std::time::Instant::now();
         match &$pool {
             limit_db::DBPool::Sqlite(pool) => {
@@ -85,9 +84,9 @@ where
     S: Service<hyper::Request<Body>, Response = hyper::Response<BoxBody>> + Clone + Send + 'static,
     S::Future: Send + 'static,
 {
-    type Response = S::Response;
     type Error = S::Error;
     type Future = futures::future::BoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Response = S::Response;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)

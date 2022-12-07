@@ -1,27 +1,19 @@
 #![feature(string_remove_matches)]
 
-use limit_deps::{metrics::increment_counter, *};
-
-use jsonwebtoken::Algorithm;
-use jsonwebtoken::DecodingKey;
-use jsonwebtoken::Validation;
-use limit_db::get_db_layer;
-use limit_utils::BackgroundTask;
-use limit_utils::{execute_background_task, Measurement};
-pub use tonic_gen::auth::*;
-
 use anyhow::Context;
 use chrono::{Duration, Utc};
-use diesel::ExpressionMethods;
-use diesel::QueryDsl;
-use diesel::RunQueryDsl;
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use limit_config::GLOBAL_CONFIG;
-use limit_db::run_sql;
-use limit_db::schema::USER;
-use limit_db::schema::USER_LOGIN_PASSCODE;
-use limit_db::schema::USER_PRIVACY_SETTINGS;
+use limit_db::{
+    get_db_layer, run_sql,
+    schema::{USER, USER_LOGIN_PASSCODE, USER_PRIVACY_SETTINGS},
+};
+use limit_deps::{metrics::increment_counter, *};
+use limit_utils::{execute_background_task, BackgroundTask, Measurement};
 use serde::{Deserialize, Serialize};
 use tonic::{Request, Response, Status};
+pub use tonic_gen::auth::*;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]

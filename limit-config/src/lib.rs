@@ -1,5 +1,4 @@
 use limit_deps::*;
-
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 pub static GLOBAL_CONFIG: OnceCell<Config> = OnceCell::new();

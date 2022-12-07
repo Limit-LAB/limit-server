@@ -1,26 +1,24 @@
-use limit_deps::{tonic::transport::Server, *};
-
-use diesel::RunQueryDsl;
-use limit_config::GLOBAL_CONFIG;
 use std::{future::Future, pin::Pin};
 
+use diesel::RunQueryDsl;
 use futures::StreamExt;
+use limit_config::GLOBAL_CONFIG;
 use limit_db::{
     event::EventSubscriptions,
     run_sql,
     schema::{EVENT_SUBSCRIPTIONS, USER, USER_LOGIN_PASSCODE, USER_PRIVACY_SETTINGS},
     DBLayer, DBPool,
 };
+use limit_deps::{tonic::transport::Server, *};
 use limit_server_auth::{
     auth_service_client::AuthServiceClient, auth_service_server::AuthServiceServer, AuthService,
     DoAuthRequest,
 };
 use limit_server_event::{
-    event_service_client::EventServiceClient, event_service_server::EventServiceServer, Event,
-    From, Message, ReceiveEventsRequest, SendEventRequest, SynchronizeRequest, To,
+    event_service_client::EventServiceClient, event_service_server::EventServiceServer, Detail,
+    Event, EventService, From, Message, ReceiveEventsRequest, SendEventRequest, SynchronizeRequest,
+    To,
 };
-use limit_server_event::{Detail, EventService};
-
 use limit_test_utils::{do_with_port, test_service, test_tasks};
 
 pub fn add(left: usize, right: usize) -> usize {

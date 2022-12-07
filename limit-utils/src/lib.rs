@@ -1,7 +1,6 @@
 use std::{error::Error, fmt::Debug, future::Future};
 
 use limit_deps::{futures::FutureExt, metrics::histogram, tokio::time::Instant, *};
-
 use once_cell::sync::Lazy;
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::ReusableBoxFuture;
@@ -116,14 +115,16 @@ impl Measurement {
         }
     }
 
-    /// Record current elapsed time and start a new measurement **without reset** the timer
+    /// Record current elapsed time and start a new measurement **without
+    /// reset** the timer
     pub fn record(&mut self, new_name: impl Into<String>) -> &mut Self {
         histogram!(self.name.clone(), self.start.elapsed());
         self.name = new_name.into();
         self
     }
 
-    /// Record current elapsed time, start a new measurement and **reset** the timer
+    /// Record current elapsed time, start a new measurement and **reset** the
+    /// timer
     pub fn renew(&mut self, new_name: impl Into<String>) -> &mut Self {
         histogram!(self.name.clone(), self.start.elapsed());
         self.name = new_name.into();

@@ -1,5 +1,3 @@
-use limit_deps::*;
-
 use std::str::FromStr;
 
 use diesel::{
@@ -7,6 +5,7 @@ use diesel::{
     serialize::{self, Output, ToSql},
     sql_types, AsExpression, FromSqlRow,
 };
+use limit_deps::*;
 
 #[derive(Debug, FromSqlRow, AsExpression)]
 #[diesel(sql_type = sql_types::Text)]

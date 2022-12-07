@@ -1,6 +1,5 @@
-use limit_deps::*;
-
 use crossbeam_channel::{Receiver, Sender};
+use limit_deps::*;
 use once_cell::sync::Lazy;
 
 pub fn mock_config() -> limit_config::Config {
@@ -74,8 +73,9 @@ macro_rules! test_tasks {
 #[macro_export]
 macro_rules! init_test_client {
     ($client_type:ty, $client_builder:ty) => {
-        use limit_test_utils::get_available_port;
         use std::net::SocketAddr;
+
+        use limit_test_utils::get_available_port;
 
         let addr: SocketAddr = format!("127.0.0.1:{}", port).parse().unwrap();
         <$client_builder>::new(format!("{}", module_path!()))
@@ -86,9 +86,10 @@ macro_rules! init_test_client {
 
 #[macro_export]
 macro_rules! test_service {
-    ($port: expr, $server: expr, $tasks: expr) => {
-        use limit_test_utils::get_available_port;
+    ($port:expr, $server:expr, $tasks:expr) => {
         use std::net::SocketAddr;
+
+        use limit_test_utils::get_available_port;
         tracing::info!("💪 test {} started", module_path!());
 
         tracing::info!("🚀 test {} on port {}", module_path!(), $port);
@@ -125,9 +126,8 @@ where
 
 #[macro_export]
 macro_rules! do_with_port_m {
-    ($f: expr) => {{
-        use limit_test_utils::get_available_port;
-        use limit_test_utils::AVAILABLE_PORTS_CHANNEL;
+    ($f:expr) => {{
+        use limit_test_utils::{get_available_port, AVAILABLE_PORTS_CHANNEL};
         let port = get_available_port().await;
         let res = $f(port);
         AVAILABLE_PORTS_CHANNEL.0.clone().send(port).unwrap();

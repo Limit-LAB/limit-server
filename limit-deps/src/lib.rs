@@ -1,3 +1,6 @@
+#![feature(custom_inner_attributes)]
+#![rustfmt::skip]
+
 // encryption
 pub use aes;
 pub use elliptic_curve;

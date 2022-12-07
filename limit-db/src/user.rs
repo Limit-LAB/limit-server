@@ -1,11 +1,10 @@
-use limit_deps::*;
-
-use crate::schema::*;
-
-use diesel::prelude::*;
 use std::str::FromStr;
 
+use diesel::prelude::*;
+use limit_deps::*;
 use serde::{Deserialize, Serialize};
+
+use crate::schema::*;
 
 /// A user
 #[derive(Serialize, Deserialize, Clone, Queryable, Insertable, Selectable)]
@@ -118,6 +117,7 @@ pub enum Visibility {
 
 impl FromStr for Visibility {
     type Err = ();
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "public" => Ok(Self::Public),

@@ -1,10 +1,9 @@
 use std::{future::Future, pin::Pin};
 
-use limit_deps::{tonic::transport::Server, *};
-
 use diesel::RunQueryDsl;
 use limit_config::GLOBAL_CONFIG;
 use limit_db::{run_sql, schema::*, DBLayer, DBPool};
+use limit_deps::{tonic::transport::Server, *};
 use limit_server_auth::{
     auth_service_client::AuthServiceClient, auth_service_server::AuthServiceServer, AuthService,
     DoAuthRequest, RequestAuthRequest,

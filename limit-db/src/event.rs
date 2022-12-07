@@ -1,8 +1,8 @@
+use diesel::{Insertable, Queryable, Selectable};
 use limit_deps::*;
+use serde::{Deserialize, Serialize};
 
 use crate::schema::*;
-use diesel::{Insertable, Queryable, Selectable};
-use serde::{Deserialize, Serialize};
 
 /// A event for sending and receiving
 #[derive(Serialize, Deserialize)]

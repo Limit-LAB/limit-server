@@ -4,13 +4,14 @@ use anyhow::Context;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use futures::StreamExt;
 use limit_config::GLOBAL_CONFIG;
-use limit_db::schema::{EVENT, EVENT_SUBSCRIPTIONS, MESSAGE};
-use limit_db::{get_db_layer, run_sql, RedisClient};
-use limit_deps::diesel::JoinOnDsl;
-use limit_deps::*;
+use limit_db::{
+    get_db_layer, run_sql,
+    schema::{EVENT, EVENT_SUBSCRIPTIONS, MESSAGE},
+    RedisClient,
+};
+use limit_deps::{diesel::JoinOnDsl, *};
 use limit_utils::{execute_background_task, BackgroundTask};
 use tonic::{codegen::BoxStream, Request, Response, Status};
-
 pub use tonic_gen::event::{event::*, synchronize_request::*, types::*, *};
 
 #[derive(Debug, Clone)]
@@ -67,6 +68,7 @@ fn dbmessage_to_message(m: limit_db::event::SREvent) -> Result<Event, Status> {
 #[tonic::async_trait]
 impl tonic_gen::event::event_service_server::EventService for EventService {
     type ReceiveEventsStream = BoxStream<Event>;
+
     async fn receive_events(
         &self,
         req: Request<ReceiveEventsRequest>,
