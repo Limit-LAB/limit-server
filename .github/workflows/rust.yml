@@ -8,6 +8,7 @@ on:
       - review_requested
       - ready_for_review
       - opened
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,7 +18,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
