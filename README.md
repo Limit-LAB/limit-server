@@ -1,6 +1,6 @@
 # LIMITS: Limit-IM does not have ITS LIMITS
 
-[![Rust](https://github.com/LemonHX/limit/actions/workflows/rust.yml/badge.svg)](https://github.com/LemonHX/limit/actions/workflows/rust.yml)
+[![Rust](https://github.com/Limit-IM/limit-server/actions/workflows/rust.yml/badge.svg)](https://github.com/Limit-IM/limit-server/actions/workflows/rust.yml)
 ![lines](https://tokei.ekzhang.com/b1/github/limit-im/limit-server)
 
 **Technology Stack**
