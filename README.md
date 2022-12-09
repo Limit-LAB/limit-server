@@ -1,4 +1,4 @@
-# LIMITS: Lemon's IM does not have ITS LIMITS
+# LIMITS: Limit-IM does not have ITS LIMITS
 
 [![Rust](https://github.com/LemonHX/limit/actions/workflows/rust.yml/badge.svg)](https://github.com/LemonHX/limit/actions/workflows/rust.yml)
 ![lines](https://tokei.ekzhang.com/b1/github/limit-im/limit-server)
@@ -22,21 +22,23 @@
 `LIMITS` is yet another fully open source, interoperable, decentralised real-time communication protocol!
 
 ---
-[`中文版在这里啦~~`](README.zh-cn.md)
+[`中文文档`](README.zh-cn.md)
 
-## TL;DR WTF is that
+## TL;DR: What is this?
 
 It is a new IM protocol and with implementation with federal-based governance.
 
+In simple words, you can run your own server and connect to other servers quite easy.
+
 ## Wait! Could I host it on my AWS EC2 T or Azure B1 series machine?
 
-Memory usage and storage usage and also the ease of deployment is the **Tier-0** concern for this project,
-so ideally it runs on 1c1g.
+Memory, storage usage and the ease of deployment are the **Tier-0** concerns for this project,
+so ideally it will be able to run on 1c1g VPS.
 
-Also, this product is very friendly to cloud infrastructure, and all databases and metrics take into account that users may deploy on cloud SaaS.
+Also, this product is very friendly to cloud infrastructure, all databases and metrics take into account that users may deploy on cloud SaaS.
 
-## ~~If I'm super rich~~ Does it scale well on my k8s cluster?
+## How about k8s? Does it scale well on its cluster?
 
-Scaling horizontally is a very big challenge, not to mention the difficulty I have to consider for standalone deployments.
-Horizontal scaling is even scarier for Ops if you can't automate it, so I'll focus on clustering ideas when I make a standalone version.
-At this stage I will try to decouple the components and then try to develop them in a cluster-friendly way.
+Scaling horizontally is such a big challenge, not to mention the difficulty we have to consider for standalone deployments.
+Horizontal scaling is even scarier for Ops if you can't automate it, so we'll focus on clustering ideas when we make a standalone version.
+At current stage, we are trying to decouple the components and then will try to develop them in a cluster-friendly way.
