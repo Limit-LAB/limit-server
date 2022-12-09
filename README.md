@@ -37,7 +37,7 @@ so ideally it will be able to run on 1c1g VPS.
 
 Also, this product is very friendly to cloud infrastructure, all databases and metrics take into account that users may deploy on cloud SaaS.
 
-## How about k8s? Does it scale well on its cluster?
+## How about k8s? Does it scale well on the cluster?
 
 Scaling horizontally is such a big challenge, not to mention the difficulty we have to consider for standalone deployments.
 Horizontal scaling is even scarier for Ops if you can't automate it, so we'll focus on clustering ideas when we make a standalone version.
