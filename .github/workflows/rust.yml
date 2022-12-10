@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: ["master", "subs"]
+    branches: ["master", "dev"]
   pull_request:
     types:
       - review_requested
