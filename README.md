@@ -73,7 +73,7 @@ So it should be able to run on a 1C1G chick.
 
 Also, this product is very cloud infrastructure friendly, with all the databases and metrics taken into account for possible user deployment on a cloud SaaS.
 
-## ~~If I'm super rich~~ Does it scale well on my k8s cluster?
+## Does it scale well on my k8s cluster?
 Scaling horizontally is a very big challenge, not to mention the difficulty I have to consider for standalone deployments.
 Horizontal scaling that can't be automated is even scarier for Ops, so when I do a standalone deployment version, do my best to make it scalable.
 At this stage I will try to decouple the components and then try to develop them in a cluster friendly way.
