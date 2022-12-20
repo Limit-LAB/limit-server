@@ -32,6 +32,7 @@ In simple words, you can run your own server and connect to other servers quite 
 
 
 ## Progress of the project
+
 Since we started developing this project we have completed a lot of work and the current phase is still in the technical and theoretical validation phase.
 
 We first spent a month looking at existing IM protocols and we identified a number of issues such as centralisation, encryption, open source and private deployment etc.
@@ -41,6 +42,7 @@ We have recently been working on the actual code and theoretical exercises and w
 
 
 ## Why are we doing this project?
+
 There are so many options for IM protocols nowadays, but they all have one problem in common: they are all centralised.
 This means that they are all controlled by a company or organisation that can close your account at any time, or modify your messages without your knowledge.
 This is a very serious problem as it can lead to a breach of your privacy, or theft of your account.
@@ -52,7 +54,9 @@ Another disadvantage of not being open source is that it can't be deployed priva
 
 So the problem we faced was that there was no IM protocol that combined decentralisation, encryption, open source and private deployment.
 
+
 ## What is our solution?
+
 We focus on high availability, high security, high scalability, high customisability and high ease of deployment.
 Our solution is a new IM protocol that is federation-based, which means it is made up of multiple servers, each of which is a separate entity that communicates with each other via a federation protocol.
 
@@ -62,18 +66,22 @@ We have created a federated messaging protocol that runs on any server in the fe
 
 We use CRDT technology to synchronise state across the federation network, which means that a group can continue to operate with a minimum of one live server, providing a very high level of availability.
 
+
 ## Social Attributes
+
 Today's mainstream open source IMs do not have particularly strong social attributes. In order to achieve profitability and open source attributes at the same time we can combine blockchain technology to allow users to develop their own communities and create their own wealth such as emojis, wallpapers, themes, bubbles, etc. Moreover, the blockchain is open source and the server owner can choose to deploy it so that the server also has some profitability. This would allow both the server owner and the user to earn some revenue while maintaining the open source nature.
 
 
-
 ## Wait! Can I host it on my AWS EC2 T or Azure B1 series machine?
+
 Memory usage and storage usage and ease of deployment are the **Level 0** concerns for this project.
-So it should be able to run on a 1C1G chick.
+So it should be able to run on a 1C1G machine.
 
 Also, this product is very cloud infrastructure friendly, with all the databases and metrics taken into account for possible user deployment on a cloud SaaS.
 
+
 ## Does it scale well on my k8s cluster?
+
 Scaling horizontally is a very big challenge, not to mention the difficulty I have to consider for standalone deployments.
 Horizontal scaling that can't be automated is even scarier for Ops, so when I do a standalone deployment version, do my best to make it scalable.
 At this stage I will try to decouple the components and then try to develop them in a cluster friendly way.
