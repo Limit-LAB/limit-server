@@ -1,5 +1,8 @@
 # LIMITS: Limit-IM does not have ITS LIMITS
 
+> We are undergoing a major refactoring and technology stack adjustment to better accommodate clustered deployment solutions
+
+
 [![Rust](https://github.com/Limit-IM/limit-server/actions/workflows/rust.yml/badge.svg)](https://github.com/Limit-IM/limit-server/actions/workflows/rust.yml)
 ![lines](https://tokei.ekzhang.com/b1/github/limit-im/limit-server)
 
